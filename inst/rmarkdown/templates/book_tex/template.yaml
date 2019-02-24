@@ -1,0 +1,4 @@
+name: LibRArs book (tex)
+description: >
+ Template for creating a TEX book for LibRArs
+create_dir: true

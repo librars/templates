@@ -1,0 +1,11 @@
+Package: librarstemplates
+Type: Package
+Title: LibRArs templates
+Version: 1.0
+Date: 2019-02-24
+Authors@R: person("Andrea", "Tino", email = "andry.tino@gmail.com", role = c("aut", "cre", "cph"))
+Description: This package contains all templates that can be used in LibRArs.
+License: GNU GPL-3
+BugReports: https://github.com/librars/templates/issues
+RoxygenNote: 6.1.1
+Encoding: UTF-8

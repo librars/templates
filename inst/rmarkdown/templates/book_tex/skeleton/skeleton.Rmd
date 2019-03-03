@@ -32,7 +32,7 @@ MSC:
 abstract: |
   The text of your abstract.  150 -- 250 words.
 bibliography: bibliography.bib
-output: rticles::springer_article
+output: librarstemplates::book_tex
 ---
 
 # Introduction {#intro}

@@ -18,7 +18,7 @@ monographs.
 }
 \examples{
 \dontrun{
-rmarkdown::draft("MyArticle.Rmd", template = "springer_article", package = "rticles")
+bookdown::render_book("MyArticle.Rmd")
 }
 
 }

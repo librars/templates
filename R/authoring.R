@@ -38,7 +38,8 @@ make <- function(input) {
 #' @param dir_name (Optional) The name of the destination folder.
 #' @param file_name (Optional) The name of the core template file. File
 #'   'skeleton.Rmd' will be renamed to this, otherwise the name will remain
-#'   the original.
+#'   the original. This can contains the extension or not, if no extension is
+#'   inclided, '.Rmd' extension  will be added.
 #'
 #' @examples
 #' \dontrun{
@@ -52,22 +53,21 @@ make <- function(input) {
 #'
 #' @export
 deploy_template <- function(template,
-                            package = NULL,
+                            package = "librarstemplates",
                             dir_name = NULL,
                             file_name = NULL) {
   # Resolve the package and get the template directory
   if (!is.null(package)) {
-    template_path = system.file("rmarkdown", "templates",
-                                template, package = package)
-    if (!nzchar(template_path)) {
-      stop("Template '", template, "' was not found in package '", package, "'")
-    }
-  } else {
-    template_path <- template
+    package <- "librarstemplates"
+  }
+  template_path = system.file("rmarkdown", "templates",
+                              template, package = package)
+  if (!nzchar(template_path)) {
+    stop("Template '", template, "' was not found in package '", package, "'")
   }
 
   # Create a new directory
-  if (!is.null(dir_name)) {
+  if (is.null(dir_name)) {
     dir_name <- template
   }
   if (dir_exists(dir_name)) {
@@ -88,7 +88,11 @@ deploy_template <- function(template,
 
   # rename the core template file
   if (!is.null(file_name)) {
-    file.rename(file.path(dir_name, "skeleton.Rmd"), file_name)
+    if (!nzchar(tools::file_ext(file_name))) {
+      file_name <- paste0(file_name, ".Rmd")
+    }
+    file.rename(file.path(dir_name, "skeleton.Rmd"),
+                file.path(dir_name, file_name))
   }
 
   # return the name of the file created

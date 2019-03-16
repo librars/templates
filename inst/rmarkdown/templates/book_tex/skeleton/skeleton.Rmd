@@ -33,6 +33,7 @@ abstract: |
   The text of your abstract.  150 -- 250 words.
 bibliography: bibliography.bib
 output: librarstemplates::book_tex
+  toc: yes
 ---
 
 # Introduction {#intro}

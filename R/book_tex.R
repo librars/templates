@@ -13,8 +13,20 @@
 #'
 #' @export
 book_tex <- function(..., keep_tex = TRUE, citation_package = 'none') {
+  # locations of resource files in the package
+  pkg_resource <- function(...) {
+    system.file(..., package = "librarstemplates")
+  }
+
+  tmpl = pkg_resource("rmarkdown", "templates",
+                      "book_tex", "resources", "template.tex")
+  if (tmpl == "") {
+    stop("Couldn't find pkg resource template")
+  }
+
   bookdown::pdf_book(...,
                      base_format = rmarkdown::pdf_document,
+                     keep_tex = keep_tex,
                      template = tmpl,
-                     keep_tex = TRUE)
+                     citation_package = citation_package)
 }

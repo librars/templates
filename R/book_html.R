@@ -3,8 +3,8 @@
 #' This format was adapted from the Springer manuscript package for Springer
 #' monographs.
 #'
-#' @inheritParams bookdown::pdf_book
-#' @param ... Arguments to \code{bookdown::pdf_book}.
+#' @inheritParams bookdown::html_chapters
+#' @param ... Arguments to \code{bookdown::html_chapters}.
 #' @return R Markdown output format to pass to
 #'   \code{\link[bookdown::render_book]{render_book}}.
 #' @examples
@@ -13,16 +13,15 @@
 #' }
 #'
 #' @export
-book_tex <- function(..., keep_tex = TRUE, citation_package = 'none') {
+book_html <- function(..., number_sections = TRUE) {
   tmpl = get_pkg_resource("rmarkdown", "templates",
-                      "book_tex", "resources", "template.tex")
+                      "book_html", "resources", "template.html")
   if (tmpl == "") {
     stop("Couldn't find pkg resource template")
   }
 
-  bookdown::pdf_book(...,
-                     base_format = rmarkdown::pdf_document,
-                     keep_tex = keep_tex,
+  bookdown::html_chapters(...,
+                     base_format = rmarkdown::html_document,
                      template = tmpl,
-                     citation_package = citation_package)
+                     number_sections = number_sections)
 }

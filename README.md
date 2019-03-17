@@ -6,5 +6,5 @@ All available templates in LibRArs are available in this package. Following is t
 
 | Class name | Template name | Format |
 |------------|---------------|--------|
-| book       | book_tex      | Latex  |
-|            | book_html     | HTML   |
+| book       | `book_tex`    | Latex  |
+|            | `book_html`   | HTML   |

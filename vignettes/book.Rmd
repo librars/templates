@@ -1,0 +1,102 @@
+---
+title: "The Book templates"
+author: "Andrea Tino"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Book templates}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Templates to author books in the supported render forms in LibRArs.
+
+## Front matter
+The configuration parameters accepted by this set of templates are the following:
+
+- Basic
+    - Author names
+    - Title
+    - Subtitle
+- Dedication
+- Foreword
+- Preface
+- Acknowledgements
+- Acronyms
+    - Text
+    - List
+
+An example of front matter is provided below:
+
+```
+---
+# List of authors (mandatory: at least one author).
+authors:
+- name: Author 1
+  address: Department of YYY, University of XXX
+  email: abc@def
+- name: Author 2
+  address: Department of ZZZ, University of WWW
+  email: djf@wef
+
+# Title (mandatory) and subtitle (optional)
+title: Title here
+subtitle: Subtitle here
+
+# Optional
+dedication: |
+  The dedication to associate to the book and that will appear after the
+  title and before the beginning of the content of the book.
+
+# Optional
+foreword:
+  text: |
+    Grants or other notes about the article that should go on the front 
+    page should be placed her.
+  footer: Tokyo, Japan - Marh 23rd 2019
+  authors:
+  - name: Author 1
+  - name: Author 2
+
+# Optional
+preface:
+  text: |
+    Grants or other notes about the article that should go on the front 
+    page should be placed her.
+  footer: Tokyo, Japan - Marh 23rd 2019
+  authors:
+  - name: Author 1
+  - name: Author 2
+
+# Optional
+acknowledgements: |
+  The dedication to associate to the book and that will appear after the
+  title and before the beginning of the content of the book.
+
+# Optional
+acronyms:
+  text: |
+    An introduction about the section.
+  list:
+  - name: W3C
+    description: World Wide Web Consortium
+  - name: SQL
+    description: Structured Query Language
+
+# Mandatory (in order to use one of the book templates)
+output: librarstemplates::book_tex
+---
+```
+
+## Templates
+It is possible to use the following formats for this template class:
+
+- **Latex** Use: `book_tex`.
+- **HTML** Use: `book_html`.

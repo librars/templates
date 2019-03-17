@@ -20,3 +20,6 @@ Imports:
     yaml (>= 2.1.19),
     rmarkdown,
     bookdown
+Suggests: 
+    knitr
+VignetteBuilder: knitr

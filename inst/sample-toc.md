@@ -3,6 +3,9 @@
 
 Optional description
 
+### Author
+Andrea Tino
+
 ### Dedication
 An optional dedication
 

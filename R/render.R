@@ -15,7 +15,11 @@ render <- function(input, output = NULL, intermediate_dir = NULL, clean_after = 
     intermediate_dir = ifelse(is.null(intermediate_dir), input, intermediate_dir)
   )
 
-  intermediate_path <- prepare_env(config$intermediate_dir)
+  # Prepare environment and create intermediate folder
+  intermediate_path <- prepare_env(config$intermediate_dir) # normalized
+
+  # Process TOC file
+  generate_config(file.path(intermediate_path, INDEX_FILENAME), intermediate_path, TRUE)
 
   # Clean at the end
   if (clean_after) {
@@ -43,7 +47,8 @@ prepare_env <- function(intermediate_dir, no_override = FALSE) {
   dir.create(intermediate_path)
 
   # Copy all required stuff inside the intermediate folder
-  to_copy <- normalize_path(list.files(path = normalized_intermediate_dir, pattern = "\\.md$|\\.Rmd$"))
+  to_copy <- file.path(normalized_intermediate_dir,
+                       list.files(path = normalized_intermediate_dir, pattern = "\\.md$|\\.Rmd$")) # normalized
   file.copy(from = to_copy, to = intermediate_path)
 
   intermediate_path
@@ -61,6 +66,7 @@ clean_env <- function(intermediate_path) {
 #' @param input The path to the index/toc file to parse and translate.
 #' @param output The path to the directory where to emit the yml file.
 #' @param no_override A value indicating whether to allow overriding existing files.
+#' @return The path to the generated yml file.
 generate_config <- function(input, output, no_override = FALSE) {
   if (!file.exists(input)) {
     stop(paste("File", input, "could not be found"))
@@ -70,7 +76,11 @@ generate_config <- function(input, output, no_override = FALSE) {
     stop(paste("Output file", output, "already exists, will not override"))
   }
 
-  writeLines(generate_config(input), output)
+  yml_filepath <- normalize_path(file.path(output, BOOKMARK_YML_FILENAME))
+  yml_content <- readr::read_file()
+  writeLines(generate_config(input), yml_content)
+
+  yml_filepath
 }
 
 #' Generates the content of the _bookdown.yml file
@@ -78,7 +88,41 @@ generate_config <- function(input, output, no_override = FALSE) {
 #' @param input The input content of the index/toc file.
 #' @return The content of the _bookdown.yml file.
 generate_config <- function(input) {
+  if (!is.character(input)) {
+    stop(paste("Invalid input:", input))
+  }
 
+  # Make sure to always have \n as newline
+  normalized_input <- normalize_string_newlines(input)
+
+  yml <- list()
+
+  # Mandatory fields
+  matcher.title <- "([^#]|^)#[^#](\\s*.+)\\n"
+  matcher.chapter_item <- "-\\s*(.+)\\n"
+  # Optional fields
+  matcher.subtitle <- "([^#]|^)##[^#](\\s*.+)\\n"
+  matcher.author <- "([^#]|^)###[^#]Author\\n+(.+)\\n"
+
+  extract <- function(pattern) {
+    res <- stringr::str_extract_all(normalized_input, pattern) # list
+    if (length(res) == 0) {
+      return(NULL)
+    }
+
+    res <- res[[1]] # vector
+    if (length(res) == 1 && identical(res[[1]], character(0))) {
+      return(NULL)
+    }
+
+    extracted_matches <- stringr::str_match(res, pattern) # matrix (second column has the extracted values)
+    extracted_matches[, 2] # vector
+  }
+
+  # Fetch mandatory fields
+  yml$title <- extract(matcher.title)
+
+  yaml::as.yaml(yml)
 }
 
 #' Parses a file and generates the Rmd that will be fed to bookdown

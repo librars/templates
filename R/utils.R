@@ -11,3 +11,8 @@ get_pkg_resource <- function(...) {
 normalize_path <- function(path) {
   normalizePath(path)
 }
+
+#' Converts all \r\n into \n
+normalize_string_newlines <- function(input) {
+  stringr::str_replace_all(input, "\\r\\n", "\n")
+}

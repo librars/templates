@@ -1,0 +1,9 @@
+---
+title: "Simple document"
+author: "Andrea Tino"
+date: "April 10, 2020"
+output: pdf_document
+---
+
+# Simple example
+Not much to cover here.

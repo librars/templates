@@ -3,26 +3,23 @@
 #' This format was adapted from the Springer manuscript package for Springer
 #' monographs.
 #'
-#' @inheritParams bookdown::pdf_book
-#' @param ... Arguments to \code{bookdown::pdf_book}.
+#' @inheritParams rmarkdown::pdf_document
+#' @param ... Arguments to \code{rmarkdown::pdf_document}.
 #' @return R Markdown output format to pass to
-#'   \code{\link[bookdown::render_book]{render_book}}.
+#'   \code{\link[bookdown::render]{render}}.
 #' @examples
 #' \dontrun{
-#' bookdown::render_book("MyArticle.Rmd")
+#' rmarkdown::render("MyArticle.Rmd", book_tex_format())
 #' }
 #'
 #' @export
-book_tex <- function(..., keep_tex = TRUE, citation_package = 'none') {
-  tmpl = get_pkg_resource("rmarkdown", "templates",
-                      "book_tex", "resources", "template.tex")
-  if (tmpl == "") {
-    stop("Couldn't find pkg resource template")
+book_tex_format <- function(...) {
+  format <- rmarkdown::pdf_document
+
+  # Augment by adding a pre-knit step
+  format$pre_knit <- function(input, ...) {
+    pre_process(input, ...)
   }
 
-  bookdown::pdf_book(...,
-                     base_format = rmarkdown::pdf_document,
-                     keep_tex = keep_tex,
-                     template = tmpl,
-                     citation_package = citation_package)
+  format
 }

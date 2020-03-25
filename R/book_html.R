@@ -13,15 +13,25 @@
 #' }
 #'
 #' @export
-book_html <- function(..., number_sections = TRUE) {
+book_html_old <- function(..., number_sections = TRUE) {
   tmpl = get_pkg_resource("rmarkdown", "templates",
-                      "book_html", "resources", "template.html")
+                          "book_html", "resources", "template.html")
   if (tmpl == "") {
     stop("Couldn't find pkg resource template")
   }
 
   bookdown::html_chapters(...,
-                     base_format = rmarkdown::html_document,
-                     template = tmpl,
-                     number_sections = number_sections)
+                          base_format = rmarkdown::html_document,
+                          template = tmpl,
+                          number_sections = number_sections)
+}
+
+#' LibRArs book
+#'
+#' This format was adapted from the Springer manuscript package for Springer
+#' monographs.
+#'
+#' @export
+book_html_format <- function() {
+
 }

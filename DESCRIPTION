@@ -17,9 +17,10 @@ Depends:
 Imports:
     tools,
     xfun,
+    readr,
+    yaml,
     yaml (>= 2.1.19),
-    rmarkdown,
-    bookdown
+    bookdown (>= 0.18)
 Suggests: 
     knitr
 VignetteBuilder: knitr

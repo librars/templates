@@ -20,8 +20,9 @@ render <- function(input, output = NULL, intermediate_dir = NULL, clean_after = 
   # Prepare environment and create intermediate folder
   intermediate_path <- prepare_env(config$intermediate_dir) # normalized
 
-  # Process TOC file
-  generate_config(file.path(intermediate_path, config$index_filename), intermediate_path, TRUE)
+  # Process TOC file and generate _bookdown.yml and index.Rmd
+  generate_config_file(file.path(intermediate_path, config$index_filename), intermediate_path, TRUE)
+  generate_indexrmd_file(file.path(intermediate_path, config$index_filename), intermediate_path, TRUE)
 
   # Clean at the end
   if (clean_after) {
@@ -69,7 +70,7 @@ clean_env <- function(intermediate_path) {
 #' @param output The path to the directory where to emit the yml file.
 #' @param no_override A value indicating whether to allow overriding existing files.
 #' @return The path to the generated yml file.
-generate_config <- function(input, output, no_override = FALSE) {
+generate_config_file <- function(input, output, no_override = FALSE) {
   if (!file.exists(input)) {
     stop(paste("File", input, "could not be found"))
   }
@@ -83,6 +84,33 @@ generate_config <- function(input, output, no_override = FALSE) {
   writeLines(yaml::as.yaml(generate_config(index_content)), yml_filepath)
 
   yml_filepath
+}
+
+#' Generates the index.Rmd front matter file
+#' 
+#' Generates the index.Rmd file at the specified location.
+#' 
+#' @param input The path to the index/toc file to parse and translate.
+#' @param output The path to the directory where to emit the yml file.
+#' @param no_override A value indicating whether to allow overriding existing files.
+#' @return The path to the generated yml file.
+generate_indexrmd_file <- function(input, output, no_override = FALSE) {
+  if (!file.exists(input)) {
+    stop(paste("File", input, "could not be found"))
+  }
+
+  if (no_override && file.exists(output)) {
+    stop(paste("Output file", output, "already exists, will not override"))
+  }
+
+  rmd_filepath <- normalize_path(file.path(output, INDEX_RMD_FILENAME))
+  index_content <- get_file_content(input)
+
+  rmd_content_frontmatter <- yaml::as.yaml(generate_indexrmd(index_content))
+  rmd_content <- c("---", rmd_content_frontmatter, "---")
+  writeLines(rmd_content, rmd_filepath)
+
+  rmd_filepath
 }
 
 #' Generates the content of the _bookdown.yml file
@@ -100,31 +128,62 @@ generate_config <- function(input) {
   yml <- list()
 
   # Mandatory fields
-  matcher.title <- list(pattern = "([^#]|^)#[^#](\\s*.+)\\n", group_no = 3)
   matcher.chapter_item <- list(pattern = "-\\s*(.+)\\n", group_no = 2)
+
+  # Fetch mandatory fields
+  yml$rmd_files <- paste(extract_tocfile_metadata(normalized_input, matcher.chapter_item$pattern, matcher.chapter_item$group_no), FILE_EXT, sep = ".")
+
+  yml
+}
+
+#' Generates the content of the index.Rmd file
+#' 
+#' @param input The input content of the index/toc file.
+#' @return The content of the index.Rmd file emitted as a list.
+generate_indexrmd <- function(input) {
+  if (!is.character(input)) {
+    stop(paste("Invalid input:", input))
+  }
+
+  # Make sure to always have \n as newline
+  normalized_input <- normalize_string_newlines(input)
+
+  yml <- list()
+
+  # Mandatory fields
+  matcher.title <- list(pattern = "([^#]|^)#[^#](\\s*.+)\\n", group_no = 3)
   # Optional fields
   matcher.subtitle <- list(pattern = "([^#]|^)##[^#](\\s*.+)\\n", group_no = 3)
   matcher.author <- list(pattern = "([^#]|^)###[^#]Author\\n+(.+)\\n", group_no = 3)
 
-  extract <- function(pattern, group_no) {
-    res <- stringr::str_extract_all(normalized_input, pattern) # list
-    if (length(res) == 0) {
-      return(NULL)
-    }
-
-    res <- res[[1]] # vector
-    if (length(res) == 1 && identical(res[[1]], character(0))) {
-      return(NULL)
-    }
-
-    extracted_matches <- stringr::str_match(res, pattern) # matrix (group_no column has the extracted values)
-    extracted_matches[, group_no] # vector
-  }
-
   # Fetch mandatory fields
-  yml$title <- extract(matcher.title$pattern, matcher.title$group_no)
+  yml$title <- extract_tocfile_metadata(normalized_input, matcher.title$pattern, matcher.title$group_no)
+  # Handle optional fields
+  yml$subtitle <- extract_tocfile_metadata(normalized_input, matcher.subtitle$pattern, matcher.subtitle$group_no)
+  yml$author <- extract_tocfile_metadata(normalized_input, matcher.author$pattern, matcher.author$group_no)
 
   yml
+}
+
+#' Extracts relevant metadata from index.md toc file
+#' 
+#' @param text Normalized (all newlines as \n) text content.
+#' @param pattern The regex to use.
+#' @param group_no The group number for extraction.
+#' @return The metadata.
+extract_tocfile_metadata <- function(text, pattern, group_no) {
+  res <- stringr::str_extract_all(text, pattern) # list
+  if (length(res) == 0) {
+    return(NULL)
+  }
+
+  res <- res[[1]] # vector
+  if (length(res) == 1 && identical(res[[1]], character(0))) {
+    return(NULL)
+  }
+
+  extracted_matches <- stringr::str_match(res, pattern) # matrix (group_no column has the extracted values)
+  extracted_matches[, group_no] # vector
 }
 
 #' Parses a file and generates the Rmd that will be fed to bookdown

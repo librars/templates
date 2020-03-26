@@ -80,7 +80,7 @@ generate_config <- function(input, output, no_override = FALSE) {
 
   yml_filepath <- normalize_path(file.path(output, BOOKMARK_YML_FILENAME))
   index_content <- get_file_content(input)
-  writeLines(generate_config(index_content), yml_filepath)
+  writeLines(yaml::as.yaml(generate_config(index_content)), yml_filepath)
 
   yml_filepath
 }
@@ -88,7 +88,7 @@ generate_config <- function(input, output, no_override = FALSE) {
 #' Generates the content of the _bookdown.yml file
 #' 
 #' @param input The input content of the index/toc file.
-#' @return The content of the _bookdown.yml file.
+#' @return The content of the _bookdown.yml file emitted as a list.
 generate_config <- function(input) {
   if (!is.character(input)) {
     stop(paste("Invalid input:", input))
@@ -100,13 +100,13 @@ generate_config <- function(input) {
   yml <- list()
 
   # Mandatory fields
-  matcher.title <- "([^#]|^)#[^#](\\s*.+)\\n"
-  matcher.chapter_item <- "-\\s*(.+)\\n"
+  matcher.title <- list(pattern = "([^#]|^)#[^#](\\s*.+)\\n", group_no = 3)
+  matcher.chapter_item <- list(pattern = "-\\s*(.+)\\n", group_no = 2)
   # Optional fields
-  matcher.subtitle <- "([^#]|^)##[^#](\\s*.+)\\n"
-  matcher.author <- "([^#]|^)###[^#]Author\\n+(.+)\\n"
+  matcher.subtitle <- list(pattern = "([^#]|^)##[^#](\\s*.+)\\n", group_no = 3)
+  matcher.author <- list(pattern = "([^#]|^)###[^#]Author\\n+(.+)\\n", group_no = 3)
 
-  extract <- function(pattern) {
+  extract <- function(pattern, group_no) {
     res <- stringr::str_extract_all(normalized_input, pattern) # list
     if (length(res) == 0) {
       return(NULL)
@@ -117,14 +117,14 @@ generate_config <- function(input) {
       return(NULL)
     }
 
-    extracted_matches <- stringr::str_match(res, pattern) # matrix (second column has the extracted values)
-    extracted_matches[, 2] # vector
+    extracted_matches <- stringr::str_match(res, pattern) # matrix (group_no column has the extracted values)
+    extracted_matches[, group_no] # vector
   }
 
   # Fetch mandatory fields
-  yml$title <- extract(matcher.title)
+  yml$title <- extract(matcher.title$pattern, matcher.title$group_no)
 
-  yaml::as.yaml(yml)
+  yml
 }
 
 #' Parses a file and generates the Rmd that will be fed to bookdown

@@ -22,5 +22,6 @@ Imports:
     yaml (>= 2.1.19),
     bookdown (>= 0.18)
 Suggests: 
-    knitr
+    knitr,
+    testthat
 VignetteBuilder: knitr

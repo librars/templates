@@ -16,3 +16,8 @@ normalize_path <- function(path) {
 normalize_string_newlines <- function(input) {
   stringr::str_replace_all(input, "\\r\\n", "\n")
 }
+
+#' Gets the file content
+get_file_content <- function(path) {
+  readr::read_file(path)
+}

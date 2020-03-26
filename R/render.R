@@ -8,18 +8,20 @@
 #'     place the temporary files during rendering. If not specified,
 #'     it will be the same as input. The directory must exist.
 #' @param clean_after A value indicating whether to clean the intermediate folder.
+#' @param index_filename The name of the index file to look for. If NULL, defaults to index.md.
 #' 
 #' @export
-render <- function(input, output = NULL, intermediate_dir = NULL, clean_after = TRUE) {
+render <- function(input, output = NULL, intermediate_dir = NULL, clean_after = TRUE, index_filename = NULL) {
   config <- list(
-    intermediate_dir = ifelse(is.null(intermediate_dir), input, intermediate_dir)
+    intermediate_dir = ifelse(is.null(intermediate_dir), input, intermediate_dir),
+    index_filename = ifelse(is.null(index_filename), INDEX_FILENAME, index_filename)
   )
 
   # Prepare environment and create intermediate folder
   intermediate_path <- prepare_env(config$intermediate_dir) # normalized
 
   # Process TOC file
-  generate_config(file.path(intermediate_path, INDEX_FILENAME), intermediate_path, TRUE)
+  generate_config(file.path(intermediate_path, config$index_filename), intermediate_path, TRUE)
 
   # Clean at the end
   if (clean_after) {
@@ -77,8 +79,8 @@ generate_config <- function(input, output, no_override = FALSE) {
   }
 
   yml_filepath <- normalize_path(file.path(output, BOOKMARK_YML_FILENAME))
-  yml_content <- readr::read_file()
-  writeLines(generate_config(input), yml_content)
+  index_content <- get_file_content(input)
+  writeLines(generate_config(index_content), yml_filepath)
 
   yml_filepath
 }

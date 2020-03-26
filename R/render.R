@@ -17,12 +17,15 @@ render <- function(input, output = NULL, intermediate_dir = NULL, clean_after = 
     index_filename = ifelse(is.null(index_filename), INDEX_FILENAME, index_filename)
   )
 
-  # Prepare environment and create intermediate folder
+  # Prepare environment, copy all files in there, and create intermediate folder
   intermediate_path <- prepare_env(config$intermediate_dir) # normalized
 
   # Process TOC file and generate _bookdown.yml and index.Rmd
   generate_config_file(file.path(intermediate_path, config$index_filename), intermediate_path, TRUE)
   generate_indexrmd_file(file.path(intermediate_path, config$index_filename), intermediate_path, TRUE)
+
+  # Process every Rmd file in order to parse it to bookdown-format Rmd
+  process_rmd_files(intermediate_path)
 
   # Clean at the end
   if (clean_after) {
@@ -75,11 +78,11 @@ generate_config_file <- function(input, output, no_override = FALSE) {
     stop(paste("File", input, "could not be found"))
   }
 
-  if (no_override && file.exists(output)) {
-    stop(paste("Output file", output, "already exists, will not override"))
+  yml_filepath <- normalize_path(file.path(output, BOOKMARK_YML_FILENAME))
+  if (no_override && file.exists(yml_filepath)) {
+    stop(paste("Output file", yml_filepath, "already exists, will not override"))
   }
 
-  yml_filepath <- normalize_path(file.path(output, BOOKMARK_YML_FILENAME))
   index_content <- get_file_content(input)
   writeLines(yaml::as.yaml(generate_config(index_content)), yml_filepath)
 
@@ -99,11 +102,11 @@ generate_indexrmd_file <- function(input, output, no_override = FALSE) {
     stop(paste("File", input, "could not be found"))
   }
 
-  if (no_override && file.exists(output)) {
-    stop(paste("Output file", output, "already exists, will not override"))
+  rmd_filepath <- normalize_path(file.path(output, INDEX_RMD_FILENAME))
+  if (no_override && file.exists(rmd_filepath)) {
+    stop(paste("Output file", rmd_filepath, "already exists, will not override"))
   }
 
-  rmd_filepath <- normalize_path(file.path(output, INDEX_RMD_FILENAME))
   index_content <- get_file_content(input)
 
   rmd_content_frontmatter <- yaml::as.yaml(generate_indexrmd(index_content))
@@ -128,7 +131,7 @@ generate_config <- function(input) {
   yml <- list()
 
   # Mandatory fields
-  matcher.chapter_item <- list(pattern = "-\\s*(.+)\\n", group_no = 2)
+  matcher.chapter_item <- list(pattern = "-\\s*(.+)(\\n|$)", group_no = 2)
 
   # Fetch mandatory fields
   yml$rmd_files <- paste(extract_tocfile_metadata(normalized_input, matcher.chapter_item$pattern, matcher.chapter_item$group_no), FILE_EXT, sep = ".")
@@ -151,10 +154,10 @@ generate_indexrmd <- function(input) {
   yml <- list()
 
   # Mandatory fields
-  matcher.title <- list(pattern = "([^#]|^)#[^#](\\s*.+)\\n", group_no = 3)
+  matcher.title <- list(pattern = "([^#]|^)#[^#](\\s*.+)(\\n|$)", group_no = 3)
   # Optional fields
-  matcher.subtitle <- list(pattern = "([^#]|^)##[^#](\\s*.+)\\n", group_no = 3)
-  matcher.author <- list(pattern = "([^#]|^)###[^#]Author\\n+(.+)\\n", group_no = 3)
+  matcher.subtitle <- list(pattern = "([^#]|^)##[^#](\\s*.+)(\\n|$)", group_no = 3)
+  matcher.author <- list(pattern = "([^#]|^)###[^#]Author\\n+(.+)(\\n|$)", group_no = 3)
 
   # Fetch mandatory fields
   yml$title <- extract_tocfile_metadata(normalized_input, matcher.title$pattern, matcher.title$group_no)
@@ -183,13 +186,46 @@ extract_tocfile_metadata <- function(text, pattern, group_no) {
   }
 
   extracted_matches <- stringr::str_match(res, pattern) # matrix (group_no column has the extracted values)
-  extracted_matches[, group_no] # vector
+  metadata <- extracted_matches[, group_no] # vector
+
+  if (length(metadata) == 0) {
+    return(NULL)
+  }
+  if (length(metadata) == 1 && identical(metadata, character(0))) {
+    return(NULL)
+  }
+
+  metadata
+}
+
+#' Parses all Rmd files into bookdown Rmd
+#' 
+#' The function will chanbge the original files.
+#' 
+#' @param path The folder where to search Rmd files.
+#' @return The list of the paths of processed files.
+process_rmd_files <- function(path) {
+  if (!dir.exists(path)) {
+    stop(paste("Directory", path, "could not be found"))
+  }
+
+  normalized_path <- normalize_path(path)
+
+  files_to_process <- file.path(normalized_path, list.files(path = normalized_path, pattern = "\\.Rmd$"))
+
+  for (file in files_to_process) {
+    process_rmd_file(file)
+  }
+
+  files_to_process
 }
 
 #' Parses a file and generates the Rmd that will be fed to bookdown
 #' 
+#' This function will modify the file.
+#' 
 #' @param input The path to the file to parse and translate.
-#' @param output The path to the directory where to emit the generated file.
-process_file <- function(input, output) {
+#' @return The path of the processed file.
+process_rmd_file <- function(input) {
 
 }

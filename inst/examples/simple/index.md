@@ -1,7 +1,7 @@
 # A simple book
 Discovering the simplicity of a dummy publication
 
-## Author
+### Author
 Andrea Tino
 
 - chapter1

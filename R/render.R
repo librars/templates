@@ -27,6 +27,9 @@ render <- function(input, output = NULL, intermediate_dir = NULL, clean_after = 
   # Process every Rmd file in order to parse it to bookdown-format Rmd
   process_rmd_files(intermediate_path)
 
+  # From here, bookdown is ready to take over
+  launch_bookdown(intermediate_path)
+
   # Clean at the end
   if (clean_after) {
     clean_env(intermediate_path)
@@ -228,4 +231,19 @@ process_rmd_files <- function(path) {
 #' @return The path of the processed file.
 process_rmd_file <- function(input) {
 
+}
+
+#' Launches bookdown to create the book
+#' 
+#' @param path The path to the directory where files are.
+#' @return The path of the processed file.
+launch_bookdown <- function(path) {
+  fmt <- "bookdown::pdf_book"
+  quiet <- FALSE
+
+  normalized_path <- normalize_path(path)
+
+  cmd = sprintf("setwd('%s');bookdown::render_book('index.Rmd', '%s', quiet = %s)", normalized_path, fmt, quiet)
+
+  Rscript(c("-e", shQuote(cmd)))
 }

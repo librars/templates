@@ -9,7 +9,7 @@ get_pkg_resource <- function(...) {
 
 #' Normalizes a path to the platform
 normalize_path <- function(path) {
-  normalizePath(path)
+  normalizePath(path, winslash = "/")
 }
 
 #' Converts all \r\n into \n
@@ -20,4 +20,9 @@ normalize_string_newlines <- function(input) {
 #' Gets the file content
 get_file_content <- function(path) {
   readr::read_file(path)
+}
+
+#' Executes a batch of R commands in a different session
+Rscript <- function(...) {
+  xfun::Rscript(...)
 }

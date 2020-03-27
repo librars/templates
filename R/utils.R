@@ -22,6 +22,11 @@ get_file_content <- function(path) {
   readr::read_file(path)
 }
 
+#' Writes a file
+write_file <- function(content, path) {
+  writeLines(content, path)
+}
+
 #' Executes a batch of R commands in a different session
 Rscript <- function(...) {
   xfun::Rscript(...)

@@ -2,6 +2,7 @@
 #' 
 #' @param input Path to the directory containing the files to process.
 #'     The directory must contain an index.md file.
+#' @param format The format object containing info about the type of output.
 #' @param output The directory path where to save the generated output.
 #'     If not specirfied, it will the same as input.
 #' @param intermediate_dir The intermediate directory path where to
@@ -11,8 +12,9 @@
 #' @param index_filename The name of the index file to look for. If NULL, defaults to index.md.
 #' 
 #' @export
-render <- function(input, output = NULL, intermediate_dir = NULL, clean_after = TRUE, index_filename = NULL) {
+render <- function(input, format = NULL, output = NULL, intermediate_dir = NULL, clean_after = TRUE, index_filename = NULL) {
   config <- list(
+    format_type = ifelse(is.null(format), "pdf", format$type),
     intermediate_dir = ifelse(is.null(intermediate_dir), input, intermediate_dir),
     index_filename = ifelse(is.null(index_filename), INDEX_FILENAME, index_filename)
   )
@@ -28,11 +30,30 @@ render <- function(input, output = NULL, intermediate_dir = NULL, clean_after = 
   process_rmd_files(intermediate_path)
 
   # From here, bookdown is ready to take over
-  launch_bookdown(intermediate_path)
+  bookdown_res <- launch_bookdown(intermediate_path, config$format_type)
+
+  # Fetch resources and make them available in the original folder
+  post_process(input, intermediate_path, config$format_type)
 
   # Clean at the end
   if (clean_after) {
     clean_env(intermediate_path)
+  }
+}
+
+#' Executes final operations
+#' 
+#' @param original_dir The original directory.
+#' @param intermediate_dir The intermediate directory.
+#' @param type The format type.
+post_process <- function(original_dir, intermediate_dir, type) {
+  if (identical("pdf", type)) {
+    # Special case, bookdown places the generated PDF inside a folder
+    base_path <- file.path(intermediate_dir, OUT_DIRNAME)
+    to_copy <- file.path(base_path, list.files(path = base_path, pattern = "\\.pdf$"))
+    file.copy(from = to_copy, to = original_dir)
+  } else {
+    # Generated file expected in the intermediate directory
   }
 }
 
@@ -87,7 +108,7 @@ generate_config_file <- function(input, output, no_override = FALSE) {
   }
 
   index_content <- get_file_content(input)
-  writeLines(yaml::as.yaml(generate_config(index_content)), yml_filepath)
+  write_file(yaml::as.yaml(generate_config(index_content)), yml_filepath)
 
   yml_filepath
 }
@@ -121,6 +142,8 @@ generate_indexrmd_file <- function(input, output, no_override = FALSE) {
 
 #' Generates the content of the _bookdown.yml file
 #' 
+#' As per \link{https://bookdown.org/yihui/bookdown/configuration.html#configuration}.
+#' 
 #' @param input The input content of the index/toc file.
 #' @return The content of the _bookdown.yml file emitted as a list.
 generate_config <- function(input) {
@@ -138,6 +161,8 @@ generate_config <- function(input) {
 
   # Fetch mandatory fields
   yml$rmd_files <- paste(extract_tocfile_metadata(normalized_input, matcher.chapter_item$pattern, matcher.chapter_item$group_no), FILE_EXT, sep = ".")
+  yml$output_dir <- OUT_DIRNAME
+  yml$book_filename <- OUT_FILENAME
 
   yml
 }
@@ -217,27 +242,28 @@ process_rmd_files <- function(path) {
   files_to_process <- file.path(normalized_path, list.files(path = normalized_path, pattern = "\\.Rmd$"))
 
   for (file in files_to_process) {
-    process_rmd_file(file)
+    file_content <- get_file_content(file)
+    new_file_content <- process_rmd_file(file_content)
+    write_file(new_file_content, file)
   }
 
   files_to_process
 }
 
-#' Parses a file and generates the Rmd that will be fed to bookdown
+#' Parses the content of a file and generates the Rmd that will be fed to bookdown
 #' 
-#' This function will modify the file.
-#' 
-#' @param input The path to the file to parse and translate.
-#' @return The path of the processed file.
+#' @param input The content of the file to parse and translate.
+#' @return The modified content to replace.
 process_rmd_file <- function(input) {
-
+  input
 }
 
 #' Launches bookdown to create the book
 #' 
 #' @param path The path to the directory where files are.
+#' @param type The format type object.
 #' @return The path of the processed file.
-launch_bookdown <- function(path) {
+launch_bookdown <- function(path, type) {
   fmt <- "bookdown::pdf_book"
   quiet <- FALSE
 

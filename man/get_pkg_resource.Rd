@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{get_pkg_resource}
 \alias{get_pkg_resource}
-\title{Gets resources from this package.}
+\title{Gets resources from this package}
 \usage{
 get_pkg_resource(...)
 }

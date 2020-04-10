@@ -1,4 +1,4 @@
 name: LibRArs book (html)
 description: >
  Template for creating a HTML book for LibRArs
-create_dir: true
+create_dir: false

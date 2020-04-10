@@ -11,15 +11,15 @@ book_tex_format(...)
 }
 \value{
 R Markdown output format to pass to
-  \code{\link[bookdown::render]{render}}.
+  \code{\link[bookdown::render_book]{render_book}}.
 }
 \description{
-This format was adapted from the Springer manuscript package for Springer
-monographs.
+This format renders a PDF and selects the template available
+in the folder at the moment of rendering.
 }
 \examples{
 \dontrun{
-rmarkdown::render("MyArticle.Rmd", book_tex_format())
+bookdown::render_book("MyArticle.Rmd", librarstemplates::book_tex_format())
 }
 
 }

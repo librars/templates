@@ -1,0 +1,6 @@
+rmd_files:
+- chapter2.Rmd
+- chapter1.Rmd
+output_dir: _out
+book_filename: _index_merged.Rmd
+

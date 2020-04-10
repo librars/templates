@@ -2,6 +2,6 @@
 
 export(book_html_format)
 export(book_tex_format)
-export(draft)
 export(output_format)
+export(prepare_template)
 export(render)

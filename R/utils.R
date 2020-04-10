@@ -31,3 +31,29 @@ write_file <- function(content, path) {
 Rscript <- function(...) {
   xfun::Rscript(...)
 }
+
+#' Reads properly UTF8-encoded files
+read_utf8 <- function(file) {
+  if (inherits(file, 'connection')) {
+    con <- file
+  } else {
+    con <- base::file(file, encoding = 'UTF-8')
+    on.exit(close(con), add = TRUE)
+  }
+
+  enc2utf8(readLines(con, warn = FALSE))
+}
+
+#' Writes properly encoded UTF8 values
+write_utf8 <- function(text, con, ...) {
+  opts <- options(encoding = "native.enc"); # Save original options
+  on.exit(options(opts), add = TRUE)
+
+  writeLines(enc2utf8(text), con, ..., useBytes = TRUE)
+}
+
+#' Invokes \code{yaml::load}
+yaml_load <- function(...) yaml::yaml.load(..., eval.expr = TRUE)
+
+#' Loads a YAML file.
+yaml_load_file <- function(input, ...) yaml_load(read_utf8(input), ...)

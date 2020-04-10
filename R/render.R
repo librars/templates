@@ -260,16 +260,23 @@ process_rmd_file <- function(input) {
 
 #' Launches bookdown to create the book
 #' 
-#' @param path The path to the directory where files are.
+#' @param path The path to the directory where files are. This is the working directory where
+#'     bookdown will run and it expects to have all Rmd files and template support files too.
 #' @param type The format type object.
 #' @return The path of the processed file.
 launch_bookdown <- function(path, type) {
-  fmt <- "bookdown::pdf_book"
+  template_name <- "book_tex"
+  fmt <- "librarstemplates::book_tex_format()" # TODO: should come from template.yaml
   quiet <- FALSE
 
   normalized_path <- normalize_path(path)
 
-  cmd = sprintf("setwd('%s');bookdown::render_book('index.Rmd', '%s', quiet = %s)", normalized_path, fmt, quiet)
+  cmd = paste(sprintf("setwd('%s')", normalized_path),
+              sprintf("librarstemplates::prepare_template(template = '%s')", template_name), 
+              sprintf("bookdown::render_book('index.Rmd', %s, quiet = %s)", fmt, quiet), 
+              sep = ";")
+
+  print(paste("Invoking bookdown:", cmd))
 
   Rscript(c("-e", shQuote(cmd)))
 }

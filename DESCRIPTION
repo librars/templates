@@ -21,7 +21,8 @@ Imports:
     yaml,
     xfun,
     yaml (>= 2.1.19),
-    bookdown (>= 0.18)
+    bookdown (== 0.18),
+    rmarkdown (== 2.1)
 Suggests: 
     knitr,
     testthat

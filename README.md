@@ -16,3 +16,16 @@ Following is the list of available templates:
 |------------|---------------|--------|
 | book       | `book_tex`    | Latex  |
 |            | `book_html`   | HTML   |
+
+# API call
+A correct call:
+
+```
+bookdown::render_book("./index.Rmd", rmarkdown::pdf_document())
+```
+
+Or:
+
+```
+bookdown::render_book(".", rmarkdown::pdf_document())
+```

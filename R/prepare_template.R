@@ -3,7 +3,7 @@
 #'
 #' @param dir Path to the folder where to deploy the template and its
 #'     resources.
-#' @param template Name of the template to use.
+#' @param template_name Name of the template to use.
 #' @return The directory where the template has been deployed (invisibly).
 #' @note An librars template consists of a directory that contains a
 #'     description of the template and optional additional supporting
@@ -33,20 +33,17 @@
 #' librarstemplates::prepare_template("quarterly_report", dir="/home/user/dir")
 #' }
 #' @export
-prepare_template <- function(template, dir = ".") {
+prepare_template <- function(template_name, dir = ".") {
   package <- "librarstemplates"
-  template_path <- system.file("rmarkdown", "templates", template, package = package)
+  template_path <- system.file("rmarkdown", "templates", template_name, package = package)
   if (!nzchar(template_path)) {
-    stop("The template '", template, "' was not found in the ", package, " package")
+    stop("The template '", template_name, "' was not found in the ", package, " package")
   }
 
   # Read the template.yaml and confirm it has the right fields
-  template_yaml <- file.path(template_path, "template.yaml")
-  if (!file.exists(template_yaml)) {
-    stop("No template.yaml file found for template '", template, "'")
-  }
+  template_meta <- get_template_info(template_name)
 
-  template_meta <- yaml_load_file(template_yaml)
+
   if (is.null(template_meta$name) || is.null(template_meta$description)) {
     stop("template.yaml must contain both 'name' and 'description' fields")
   }
@@ -64,18 +61,4 @@ prepare_template <- function(template, dir = ".") {
 
   # Return the name of the file created
   invisible(dir)
-}
-
-# List the template directories that are available for consumption.
-list_template_dirs <- function() {
-  # Check to see if the package includes a template folder
-  template_folder <- system.file("rmarkdown", "templates", package = "librarstemplates")
-
-  if (dir_exists(template_folder)) {
-    template_dirs <- list.dirs(path = template_folder, recursive = FALSE)
-
-    for (dir in template_dirs) {
-      cat(pkg, "|", dir, "\n", sep = "")
-    }
-  }
 }

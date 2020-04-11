@@ -57,3 +57,37 @@ yaml_load <- function(...) yaml::yaml.load(..., eval.expr = TRUE)
 
 #' Loads a YAML file.
 yaml_load_file <- function(input, ...) yaml_load(read_utf8(input), ...)
+
+#' Find the function in this package and executes it
+#' 
+#' @param fun_name The function name to look for.
+#' @param ... The arguments to pass to the function invocation.
+#' @return The invocation result.
+execute_pkg_function <- function(fun_name, ...) {
+  fun <- get_pkg_function(fun_name)
+  if (is.null(fun)) {
+    stop("Cannot find function '", fun_name, "'")
+  }
+
+  do.call(fun, list(...))
+}
+
+#' Find the function in this package
+#' 
+#' @param fun_name The function name to look for.
+#' @return The function object if found.
+get_pkg_function <- function(fun_name) {
+  res <- NULL
+
+  if (is.character(fun_name) && nchar(fun_name) > 0) {
+    tryCatch({
+      res <- get(fun_name, asNamespace("librarstemplates"))
+    }, error = function() {
+      res <- NULL
+    }, warning = function() {
+      res <- NULL
+    })
+  }
+
+  res
+}

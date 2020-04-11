@@ -7,7 +7,8 @@
 launch_bookdown(path, type)
 }
 \arguments{
-\item{path}{The path to the directory where files are.}
+\item{path}{The path to the directory where files are. This is the working directory where
+bookdown will run and it expects to have all Rmd files and template support files too.}
 
 \item{type}{The format type object.}
 }

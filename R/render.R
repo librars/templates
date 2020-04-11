@@ -1,8 +1,14 @@
+#' User must specify in \code{render} or in the TOC file, the template to use.
+#' From the template, the format is extracted.
+#' In the format call, the template handling is present. The format function will also
+#' handle which proper function to call to render the desired output type (PDF, HTML, etc.)
+NULL
+
 #' Renders an artifact
 #' 
 #' @param input Path to the directory containing the files to process.
 #'     The directory must contain an index.md file.
-#' @param format The format object containing info about the type of output.
+#' @param template_name The name of the template to use. This is the name appearing tin the \code{templates} folder.
 #' @param output The directory path where to save the generated output.
 #'     If not specirfied, it will the same as input.
 #' @param intermediate_dir The intermediate directory path where to
@@ -12,9 +18,14 @@
 #' @param index_filename The name of the index file to look for. If NULL, defaults to index.md.
 #' 
 #' @export
-render <- function(input, format = NULL, output = NULL, intermediate_dir = NULL, clean_after = TRUE, index_filename = NULL) {
+render <- function(input,
+                   template_name = "book_tex",
+                   output = NULL,
+                   intermediate_dir = NULL,
+                   clean_after = TRUE,
+                   index_filename = NULL) {
   config <- list(
-    format_type = ifelse(is.null(format), "pdf", format$type),
+    template_name = ifelse(!is.character(template_name) || nchar(template_name) == 0, "book_tex", template_name),
     intermediate_dir = ifelse(is.null(intermediate_dir), input, intermediate_dir),
     index_filename = ifelse(is.null(index_filename), INDEX_FILENAME, index_filename)
   )
@@ -30,30 +41,11 @@ render <- function(input, format = NULL, output = NULL, intermediate_dir = NULL,
   process_rmd_files(intermediate_path)
 
   # From here, bookdown is ready to take over
-  bookdown_res <- launch_bookdown(intermediate_path, config$format_type)
-
-  # Fetch resources and make them available in the original folder
-  post_process(input, intermediate_path, config$format_type)
+  compile_book(intermediate_path, template_name)
 
   # Clean at the end
   if (clean_after) {
     clean_env(intermediate_path)
-  }
-}
-
-#' Executes final operations
-#' 
-#' @param original_dir The original directory.
-#' @param intermediate_dir The intermediate directory.
-#' @param type The format type.
-post_process <- function(original_dir, intermediate_dir, type) {
-  if (identical("pdf", type)) {
-    # Special case, bookdown places the generated PDF inside a folder
-    base_path <- file.path(intermediate_dir, OUT_DIRNAME)
-    to_copy <- file.path(base_path, list.files(path = base_path, pattern = "\\.pdf$"))
-    file.copy(from = to_copy, to = original_dir)
-  } else {
-    # Generated file expected in the intermediate directory
   }
 }
 
@@ -68,7 +60,9 @@ prepare_env <- function(intermediate_dir, no_override = FALSE) {
   normalized_intermediate_dir <- normalize_path(intermediate_dir)
 
   if (!dir.exists(normalized_intermediate_dir)) {
-    stop(paste("Directory", normalized_intermediate_dir, "could not be found to place the intermediate directory"))
+    stop(paste("Directory",
+               normalized_intermediate_dir,
+               "could not be found to place the intermediate directory"))
   }
 
   intermediate_path <- file.path(normalized_intermediate_dir, INTERMEDIATE_DIR_NAME)
@@ -78,7 +72,8 @@ prepare_env <- function(intermediate_dir, no_override = FALSE) {
 
   # Copy all required stuff inside the intermediate folder
   to_copy <- file.path(normalized_intermediate_dir,
-                       list.files(path = normalized_intermediate_dir, pattern = "\\.md$|\\.Rmd$")) # normalized
+                       list.files(path = normalized_intermediate_dir, 
+                                  pattern = "\\.md$|\\.Rmd$")) # normalized
   file.copy(from = to_copy, to = intermediate_path)
 
   intermediate_path
@@ -160,7 +155,11 @@ generate_config <- function(input) {
   matcher.chapter_item <- list(pattern = "-\\s*(.+)(\\n|$)", group_no = 2)
 
   # Fetch mandatory fields
-  yml$rmd_files <- paste(extract_tocfile_metadata(normalized_input, matcher.chapter_item$pattern, matcher.chapter_item$group_no), FILE_EXT, sep = ".")
+  yml$rmd_files <- paste(extract_tocfile_metadata(normalized_input,
+                                                  matcher.chapter_item$pattern,
+                                                  matcher.chapter_item$group_no),
+                         FILE_EXT,
+                         sep = ".")
   yml$output_dir <- OUT_DIRNAME
   yml$book_filename <- OUT_FILENAME
 
@@ -258,25 +257,88 @@ process_rmd_file <- function(input) {
   input
 }
 
+#' Retrieves the format, preprocessing and postprocessing functions for a template
+#' 
+#' @param template_name The name of the template.
+#' @returns A list with function objects.
+retrieve_template_functions <- function(template_name) {
+  template_info <- get_template_info(template_name)
+
+  get_function <- function(fun_name) {
+    get_pkg_function(fun_name)
+  }
+
+  list(
+    format = get_function(template_info$format),
+    preprocessor = get_function(template_info$preprocessor),
+    postprocessor = get_function(template_info$postprocessor)
+  )
+}
+
+#' The default format
+def_format <- "book_tex_format"
+
+#' Returns the proper function call to the desired librars format
+#' 
+#' @param format The name of the desired format function.
+#' @return The proper call to the desired format.
+get_format_call <- function(format) {
+  ifelse (grepl("librarstemplates::", format),
+          paste(format, "()", sep = ""),
+          paste("librarstemplates::", format, "()", sep = ""))
+}
+
+#' Compiles the book running preprocessor, launching bookdown and running postprocessor
+#' 
+#' @param path The path to the directory where files are. This is the working directory where
+#'     bookdown will run and it expects to have all Rmd files and template support files too.
+#' @param template_name The template to use.
+compile_book <- function(path, template_name) {
+  template_functions <- retrieve_template_functions(template_name)
+
+  # Deploy template files
+  prepare_template(template = template_name, dir = path)
+
+  # Run preprocessor
+  if (!is.null(template_functions$preprocessor)) {
+    print("Running preprocessor...")
+    template_functions$preprocessor(path)
+  }
+
+  # Launch Bookdown
+  launch_bookdown(path, template_name)
+
+  # Run postprocessor
+  if (!is.null(template_functions$postprocessor)) {
+    print("Running postprocessor...")
+    template_functions$postprocessor(path)
+  }
+}
+
 #' Launches bookdown to create the book
 #' 
 #' @param path The path to the directory where files are. This is the working directory where
 #'     bookdown will run and it expects to have all Rmd files and template support files too.
-#' @param type The format type object.
-#' @return The path of the processed file.
-launch_bookdown <- function(path, type) {
-  template_name <- "book_tex"
-  fmt <- "librarstemplates::book_tex_format()" # TODO: should come from template.yaml
-  quiet <- FALSE
+#' @param template_name The template to use.
+launch_bookdown <- function(path, template_name) {
+  template_info <- get_template_info(template_name)
 
+  # Check the presence of the format function (mandatory)
+  if (is.null(template_info$format)) {
+    stop("The template.yaml for template", template_name, "must contain field 'format'")
+  }
+
+  template_format_invocation <- get_format_call(template_info$format)
+  quiet <- FALSE
   normalized_path <- normalize_path(path)
 
+  # Bookdown does not properly support passing paths to folders on which running,
+  # therefore we need to create a new sessions and run there
   cmd = paste(sprintf("setwd('%s')", normalized_path),
-              sprintf("librarstemplates::prepare_template(template = '%s')", template_name), 
-              sprintf("bookdown::render_book('index.Rmd', %s, quiet = %s)", fmt, quiet), 
+              sprintf("bookdown::render_book('index.Rmd', %s, quiet = %s)", template_format_invocation, quiet), 
               sep = ";")
 
-  print(paste("Invoking bookdown:", cmd))
+  print(paste("Invoking bookdown:", cmd, "..."))
 
   Rscript(c("-e", shQuote(cmd)))
 }

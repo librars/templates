@@ -2,6 +2,9 @@
 
 export(book_html_format)
 export(book_tex_format)
+export(book_tex_post)
+export(book_tex_pre)
+export(draft)
 export(get_template_info)
 export(output_format)
 export(prepare_template)

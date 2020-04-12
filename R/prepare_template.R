@@ -1,9 +1,9 @@
 #' Ensures that a specific template's resources are deployed to the
 #' specified directory
 #'
+#' @param template_name Name of the template to use.
 #' @param dir Path to the folder where to deploy the template and its
 #'     resources.
-#' @param template_name Name of the template to use.
 #' @return The directory where the template has been deployed (invisibly).
 #' @note An librars template consists of a directory that contains a
 #'     description of the template and optional additional supporting
@@ -43,12 +43,11 @@ prepare_template <- function(template_name, dir = ".") {
   # Read the template.yaml and confirm it has the right fields
   template_meta <- get_template_info(template_name)
 
-
   if (is.null(template_meta$name) || is.null(template_meta$description)) {
     stop("template.yaml must contain both 'name' and 'description' fields")
   }
 
-  # Copy all of the files in the skeleton directory
+  # Copy all of the files in the 'skeleton' directory
   skeleton_files <- list.files(file.path(template_path, "skeleton"), full.names = TRUE)
   to <- dir
 

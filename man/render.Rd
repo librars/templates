@@ -4,14 +4,14 @@
 \alias{render}
 \title{Renders an artifact}
 \usage{
-render(input, format = NULL, output = NULL, intermediate_dir = NULL,
-  clean_after = TRUE, index_filename = NULL)
+render(input, template_name = "book_tex", output = NULL,
+  intermediate_dir = NULL, clean_after = TRUE, index_filename = NULL)
 }
 \arguments{
 \item{input}{Path to the directory containing the files to process.
 The directory must contain an index.md file.}
 
-\item{format}{The format object containing info about the type of output.}
+\item{template_name}{The name of the template to use. This is the name appearing tin the \code{templates} folder.}
 
 \item{output}{The directory path where to save the generated output.
 If not specirfied, it will the same as input.}

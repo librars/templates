@@ -2,7 +2,7 @@
 % Please edit documentation in R/book_tex.R
 \name{book_tex_format}
 \alias{book_tex_format}
-\title{LibRArs book}
+\title{Format function for book_tex template}
 \usage{
 book_tex_format(...)
 }

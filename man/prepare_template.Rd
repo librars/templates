@@ -5,10 +5,10 @@
 \title{Ensures that a specific template's resources are deployed to the
 specified directory}
 \usage{
-prepare_template(template, dir = ".")
+prepare_template(template_name, dir = ".")
 }
 \arguments{
-\item{template}{Name of the template to use.}
+\item{template_name}{Name of the template to use.}
 
 \item{dir}{Path to the folder where to deploy the template and its
 resources.}

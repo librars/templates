@@ -4,10 +4,10 @@
 \alias{get_template_info}
 \title{Fetches the specified template's template.yaml and returns it parsed}
 \usage{
-get_template_info(template)
+get_template_info(template_name)
 }
 \arguments{
-\item{template}{The name of the template to fetch.}
+\item{template_name}{The name of the template to fetch.}
 }
 \description{
 Fetches the specified template's template.yaml and returns it parsed

@@ -27,6 +27,11 @@ write_file <- function(content, path) {
   writeLines(content, path)
 }
 
+#' Checks a directory exists
+dir_exists <- function(dirpath) {
+  length(dirpath) > 0 && utils::file_test('-d', dirpath)
+}
+
 #' Executes a batch of R commands in a different session
 Rscript <- function(...) {
   xfun::Rscript(...)

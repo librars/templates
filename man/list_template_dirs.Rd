@@ -4,7 +4,7 @@
 \alias{list_template_dirs}
 \title{Lists the template directories that are available for consumption.}
 \usage{
-list_template_dirs()
+list_template_dirs(pkg = "librarstemplates")
 }
 \description{
 Lists the template directories that are available for consumption.

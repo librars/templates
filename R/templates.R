@@ -18,16 +18,39 @@ get_template_info <- function(template_name) {
   yaml_load_file(template_yaml)
 }
 
-#' Lists the template directories that are available for consumption.
-list_template_dirs <- function() {
-  # Check to see if the package includes a template folder
-  template_folder <- system.file("rmarkdown", "templates", package = "librarstemplates")
+#' Gets a list of all available templates
+#' 
+#' @param as.json A value indicating whether JSON output should be emitted.
+#' @export
+get_template_list <- function(as.json = FALSE) {
+  dirs_list <- list_template_dirs()
+  res <- c()
 
+  for (dir in dirs_list) {
+    splitted <- strsplit(dir, "/")[[1]]
+    res <- c(res, splitted[length(splitted)])
+  }
+
+  if (isTRUE(as.json)) {
+    return(jsonlite::toJSON(list(templates = res)))
+  }
+
+  res
+}
+
+#' Lists the template directories that are available for consumption.
+list_template_dirs <- function(pkg = "librarstemplates") {
+  # Check to see if the package includes a template folder
+  template_folder <- system.file("rmarkdown", "templates", package = pkg)
+
+  list <- c()
   if (dir_exists(template_folder)) {
     template_dirs <- list.dirs(path = template_folder, recursive = FALSE)
 
     for (dir in template_dirs) {
-      cat(pkg, "|", dir, "\n", sep = "")
+      list <- c(list, dir)
     }
   }
+
+  list
 }

@@ -16,10 +16,12 @@ Depends:
     R (>= 3.0)
 Imports:
     tools,
+    utils,
     stringr,
     xfun,
     readr,
     yaml,
+    jsonlite,
     xfun,
     yaml (>= 2.1.19),
     bookdown (== 0.18),

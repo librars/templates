@@ -27,10 +27,16 @@ book_tex_pre <- function(dir) {
 
 #' Post processing function for book_tex template
 #' 
-#' @param dir The directory where the files are located.
+#' @param dir The directory where the compilation files are located.
+#' @param original_dir The directory from which source files originated.
 #' @export
-book_tex_post <- function(dir) {
+book_tex_post <- function(dir, original_dir) {
   base_path <- file.path(dir, OUT_DIRNAME)
+
   to_copy <- file.path(base_path, list.files(path = base_path, pattern = "\\.pdf$"))
   file.copy(from = to_copy, to = original_dir)
+
+  # A bug in bookdown might cause out dir not to be generated
+  to_copy2 <- file.path(dir, list.files(path = dir, pattern = "\\.pdf$"))
+  file.copy(from = to_copy2, to = original_dir)
 }

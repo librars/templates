@@ -11,7 +11,8 @@ NULL
 #' @param template_name The name of the template to use. This is the name appearing tin the \code{templates} folder.
 #' @param output The directory path where to save the generated output.
 #'     If not specirfied, it will the same as input.
-#' @param intermediate_dir The intermediate directory path where to
+#' @param intermediate_dir The directory path where the intermediate folder will be created.
+#'     The intermediate folder is the directory where to
 #'     place the temporary files during rendering. If not specified,
 #'     it will be the same as input. The directory must exist.
 #' @param clean_after A value indicating whether to clean the intermediate folder.
@@ -41,7 +42,7 @@ render <- function(input,
   process_rmd_files(intermediate_path)
 
   # From here, bookdown is ready to take over
-  compile_book(intermediate_path, template_name)
+  compile_book(intermediate_path, template_name, input)
 
   # Clean at the end
   if (clean_after) {
@@ -293,7 +294,8 @@ get_format_call <- function(format) {
 #' @param path The path to the directory where files are. This is the working directory where
 #'     bookdown will run and it expects to have all Rmd files and template support files too.
 #' @param template_name The template to use.
-compile_book <- function(path, template_name) {
+#' @param dstpath The path where to move the final artifacts once generated.
+compile_book <- function(path, template_name, dstpath) {
   template_functions <- retrieve_template_functions(template_name)
 
   # Deploy template files
@@ -311,7 +313,7 @@ compile_book <- function(path, template_name) {
   # Run postprocessor
   if (!is.null(template_functions$postprocessor)) {
     print("Running postprocessor...")
-    template_functions$postprocessor(path)
+    template_functions$postprocessor(path, dstpath)
   }
 }
 

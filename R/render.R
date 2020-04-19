@@ -164,6 +164,9 @@ generate_config <- function(input) {
   yml$output_dir <- OUT_DIRNAME
   yml$book_filename <- OUT_FILENAME
 
+  # Add index.Rmd in rmd_files in order to show title and author
+  yml$rmd_files <- c(INDEX_RMD_FILENAME, yml$rmd_files)
+
   yml
 }
 

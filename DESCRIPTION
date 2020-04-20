@@ -18,7 +18,6 @@ Imports:
     tools,
     utils,
     stringr,
-    xfun,
     readr,
     yaml,
     jsonlite,

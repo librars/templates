@@ -8,5 +8,7 @@ test_that("ordinary index file", {
   yml <- librarstemplates:::generate_config(librarstemplates:::get_file_content(artifacts.index.regular))
 
   expect_false(is.null(yml))
-  expect_equal(yml$title, "Title of the work")
+  expect_false(is.null(yml$rmd_files))
+  expect_true(is.vector(yml$rmd_files))
+  expect_equal(length(yml$rmd_files), 3 + 1) # index.Rmd added automatically
 })

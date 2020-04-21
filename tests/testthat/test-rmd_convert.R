@@ -2,8 +2,16 @@
 
 context("test-rmd-convert")
 
-artifacts.env.theorem.1 <- file.path("artifacts", "syntax", "env-theorem1.Rmd")
-artifacts.env.theorem.1.out <- file.path("artifacts", "syntax", "env-theorem1.out.Rmd")
+artifacts.env.batch <- list(
+  list(
+    src = file.path("artifacts", "syntax", "environment", "env-theorem1.Rmd"),
+    out = file.path("artifacts", "syntax", "environment", "env-theorem1.out.Rmd")
+  ),
+  list(
+    src = file.path("artifacts", "syntax", "environment", "env-theorem2.Rmd"),
+    out = file.path("artifacts", "syntax", "environment", "env-theorem2.out.Rmd")
+  )
+)
 
 test <- function(input_file, expected_output_fule) {
   input <- librarstemplates:::normalize_string_newlines(librarstemplates:::get_file_content(input_file))
@@ -15,6 +23,12 @@ test <- function(input_file, expected_output_fule) {
   expect_equal(output_res$output, expectedOutput)
 }
 
+test_batch <- function(batch) {
+  for (artifact_couple in batch) {
+    test(artifact_couple$src, artifact_couple$out)
+  }
+}
+
 test_that("environment", {
-  test(artifacts.env.theorem.1, artifacts.env.theorem.1.out)
+  test_batch(artifacts.env.batch)
 })

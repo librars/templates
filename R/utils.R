@@ -22,6 +22,18 @@ get_file_content <- function(path) {
   readr::read_file(path)
 }
 
+#' Utility to represent long string in format: 'str1...str2'
+str_excerpt <- function(str, lower = 10, upper = 10) {
+  threshold <- 25 # Number of chars below which the whole string will be returned
+  len <- nchar(str)
+  start_mark <- ifelse(len < threshold, 1, 10)
+  stop_mark <- ifelse(len < threshold, len, len - 10)
+  between <- ifelse(len < threshold, "", "...")
+  extracted1 <- ifelse(len < threshold, str, substr(str, 1, start_mark))
+  extracted2 <- ifelse(len < threshold, "", substr(str, stop_mark, len))
+  paste(extracted1, between, extracted2, sep = "")
+}
+
 #' Writes a file
 write_file <- function(content, path) {
   writeLines(content, path)

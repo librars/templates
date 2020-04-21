@@ -22,24 +22,22 @@ Verbatim code can be added like this:
 This is a code
 ```
 
+```js
+// This is code with a specified language
+(function(){ console.log })();
+```
+
 To added code in R to run:
 
-```{r}
+```!r
+# Run this r code
 paste("hello", "world")
 ```
 
-Code can be added inline as: `inline verbatin`. It is possible to run inline as well by using: `{r}1+2`.
+Code can be added inline as: `inline verbatin` (no syntax supported for specifying specific languages to highlight). It is possible to run inline as well by using: `!r 1+2`.
 
 ## Math
-To add math, use:
-
-```{math}
-\int_a^b f(x) dx
-```
-
-To add math inline use: `{math}\int f`.
-
-It is also possible to do inline using $\int f$. And block using:
+To add math, it is possible to do inline using $\int f$. And block using:
 
 $$
 \int_a^b f(x) dx
@@ -54,7 +52,7 @@ To reference it, use !(anchor-1).
 - Text anchors will use the assigned title if present.
 
 ## Environments
-A generic environment is declared with:
+A generic environment is declared with the `#!<env-name> <title>`:
 
 #! theorem Helmholtz's theorem
 ![theo-helm]
@@ -62,6 +60,10 @@ A _field_ is uniquely defined by its divergence and curl.
 
 #!proof
 Let $s$ be.
+
+#! theorem Helmholtz's theorem II
+![theo-helm]
+A _field_ is uniquely defined by its divergence and curl.
 
 
 The one before is theorem !(theo-helm) A triple LF indicates the end of the environment.
@@ -75,6 +77,12 @@ $$
 
 
 And more.
+An environment begins with the `#!` line and end in either of these cases:
+
+- A double line feed is encountered.
+- A new environment is started.
+
+It is not supported to nest environments.
 
 ## Latex
 To render and embed the result of a latex expression:

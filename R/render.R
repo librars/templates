@@ -258,7 +258,10 @@ process_rmd_files <- function(path) {
 #' @param input The content of the file to parse and translate.
 #' @return The modified content to replace.
 process_rmd_file <- function(input) {
-  input
+  # Make sure to always have \n as newline
+  normalized_input <- normalize_string_newlines(input)
+  
+  rmdconvert.scan(input)
 }
 
 #' Retrieves the format, preprocessing and postprocessing functions for a template

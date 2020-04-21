@@ -2,17 +2,6 @@
 
 context("test-rmd-convert")
 
-artifacts.env.batch <- list(
-  list(
-    src = file.path("artifacts", "syntax", "environment", "env-theorem1.Rmd"),
-    out = file.path("artifacts", "syntax", "environment", "env-theorem1.out.Rmd")
-  ),
-  list(
-    src = file.path("artifacts", "syntax", "environment", "env-theorem2.Rmd"),
-    out = file.path("artifacts", "syntax", "environment", "env-theorem2.out.Rmd")
-  )
-)
-
 test <- function(input_file, expected_output_fule) {
   input <- librarstemplates:::normalize_string_newlines(librarstemplates:::get_file_content(input_file))
   expectedOutput <-  librarstemplates:::normalize_string_newlines(librarstemplates:::get_file_content(expected_output_fule))
@@ -28,6 +17,21 @@ test_batch <- function(batch) {
     test(artifact_couple$src, artifact_couple$out)
   }
 }
+
+### Tests for construct: 'environment' ###
+
+artifacts.env.batch <- list(
+  list(
+    # Basic environment, space between #! and name, surrounded by text, double empty lines as ending
+    src = file.path("artifacts", "syntax", "environment", "env-theorem1.Rmd"),
+    out = file.path("artifacts", "syntax", "environment", "env-theorem1.out.Rmd")
+  ),
+  list(
+    # Basic environment, space between #! and name, surrounded by text, new environment as ending
+    src = file.path("artifacts", "syntax", "environment", "env-theorem2.Rmd"),
+    out = file.path("artifacts", "syntax", "environment", "env-theorem2.out.Rmd")
+  )
+)
 
 test_that("environment", {
   test_batch(artifacts.env.batch)

@@ -253,15 +253,17 @@ process_rmd_files <- function(path) {
   files_to_process
 }
 
-#' Parses the content of a file and generates the Rmd that will be fed to bookdown
+#' Parses the content of a file and generates the Rmd that will be fed to Bookdown
 #' 
 #' @param input The content of the file to parse and translate.
+#' @param ... Parameters to pass to \code{rmdconvert.scan}.
 #' @return The modified content to replace.
-process_rmd_file <- function(input) {
+process_rmd_file <- function(input, ...) {
   # Make sure to always have \n as newline
   normalized_input <- normalize_string_newlines(input)
-  
-  rmdconvert.scan(input)
+
+  processed_file <- rmdconvert.scan(normalized_input, ...)
+  processed_file$output
 }
 
 #' Retrieves the format, preprocessing and postprocessing functions for a template

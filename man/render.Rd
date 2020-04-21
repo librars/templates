@@ -16,7 +16,8 @@ The directory must contain an index.md file.}
 \item{output}{The directory path where to save the generated output.
 If not specirfied, it will the same as input.}
 
-\item{intermediate_dir}{The intermediate directory path where to
+\item{intermediate_dir}{The directory path where the intermediate folder will be created.
+The intermediate folder is the directory where to
 place the temporary files during rendering. If not specified,
 it will be the same as input. The directory must exist.}
 

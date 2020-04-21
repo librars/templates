@@ -2,16 +2,18 @@
 % Please edit documentation in R/render.R
 \name{process_rmd_file}
 \alias{process_rmd_file}
-\title{Parses the content of a file and generates the Rmd that will be fed to bookdown}
+\title{Parses the content of a file and generates the Rmd that will be fed to Bookdown}
 \usage{
-process_rmd_file(input)
+process_rmd_file(input, ...)
 }
 \arguments{
 \item{input}{The content of the file to parse and translate.}
+
+\item{...}{Parameters to pass to \code{rmdconvert.scan}.}
 }
 \value{
 The modified content to replace.
 }
 \description{
-Parses the content of a file and generates the Rmd that will be fed to bookdown
+Parses the content of a file and generates the Rmd that will be fed to Bookdown
 }

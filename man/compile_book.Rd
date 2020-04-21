@@ -4,13 +4,15 @@
 \alias{compile_book}
 \title{Compiles the book running preprocessor, launching bookdown and running postprocessor}
 \usage{
-compile_book(path, template_name)
+compile_book(path, template_name, dstpath)
 }
 \arguments{
 \item{path}{The path to the directory where files are. This is the working directory where
 bookdown will run and it expects to have all Rmd files and template support files too.}
 
 \item{template_name}{The template to use.}
+
+\item{dstpath}{The path where to move the final artifacts once generated.}
 }
 \description{
 Compiles the book running preprocessor, launching bookdown and running postprocessor

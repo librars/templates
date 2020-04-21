@@ -4,10 +4,12 @@
 \alias{book_tex_post}
 \title{Post processing function for book_tex template}
 \usage{
-book_tex_post(dir)
+book_tex_post(dir, original_dir)
 }
 \arguments{
-\item{dir}{The directory where the files are located.}
+\item{dir}{The directory where the compilation files are located.}
+
+\item{original_dir}{The directory from which source files originated.}
 }
 \description{
 Post processing function for book_tex template

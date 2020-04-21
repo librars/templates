@@ -12,6 +12,16 @@ nl <- function(...) {
   paste(..., sep = "\n")
 }
 
+create_log <- function() {
+  log <- matrix(ncol = 4)
+  colnames(log) <- c("Pattern name", "Match text", "Replaced text", "Details")
+  log
+}
+
+tidy_log <- function(log) {
+  log[!is.na(log[,1]),] # Get rid of NA rows
+}
+
 ### Generic ###
 
 #' A newline or the start of the string (1 group)
@@ -36,12 +46,28 @@ regex.env_end <- "((\\n+#)|(\\n\\n\\n))"
 #' is important.
 #' 
 #' @param rmd_src The source Rmd string.
+#' @param debug.info When \code{TRUE} it will instruct the function to log debug info.
 #' @return The source string with all constructs replaced.
-rmdconvert.scan <- function(rmd_src) {
-  # In sequence, run al scanners
-  rms_src_2 <- rmdconvert.scan.envs(rmd_src)
+rmdconvert.scan <- function(rmd_src, debug.info = FALSE) {
+  rmd_src_processed <- rmd_src
+  all_log <- create_log()
 
-  rms_src_2
+  # In sequence, run al scanners (order is important)
+  # All processors must exhibit same interface: (text, debug.info)
+  processors <- c(
+    rmdconvert.scan.envs
+  ) # list
+
+  for (processor in processors) {
+    processor_res <- processor(rmd_src_processed, debug.info)
+    rmd_src_processed <- processor_res$output
+    if (debug.info) {
+      all_log <- rbind(all_log, processor_res$debug_info)
+    }
+  }
+
+  # Return the final overall processed result
+  list(output = rmd_src_processed, debug_info = tidy_log(all_log))
 }
 
 ### Environemnts ###
@@ -87,8 +113,7 @@ rmdconvert.scan.envs <- function(rmd_src, debug.info = FALSE) {
   )
 
   rmd_out <- rmd_src
-  log <- matrix(ncol = 4)
-  colnames(log) <- c("Pattern name", "Match text", "Replaced text", "Details")
+  log <- create_log()
 
   for (pattern in patterns) { # pattern is a list
     replacer <- function(match) {
@@ -112,7 +137,7 @@ rmdconvert.scan.envs <- function(rmd_src, debug.info = FALSE) {
     rmd_out <- stringr::str_replace_all(rmd_out, pattern$regex, replacer)
   }
 
-  list(output = rmd_out, replace_log = log)
+  list(output = rmd_out, debug_info = tidy_log(log))
 }
 
 #' Creates the transformed output for an environment

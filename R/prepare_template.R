@@ -35,8 +35,8 @@
 #' @export
 prepare_template <- function(template_name, dir = ".") {
   package <- "librarstemplates"
-  template_path <- system.file("rmarkdown", "templates", template_name, package = package)
-  if (!nzchar(template_path)) {
+  template_path <- template.get_path(template_name, package = package) # Template folder
+  if (!nzchar(template_path) || !dir_exists(template_path)) {
     stop("The template '", template_name, "' was not found in the ", package, " package")
   }
 

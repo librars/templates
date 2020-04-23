@@ -41,7 +41,17 @@ write_file <- function(content, path) {
 
 #' Checks a directory exists
 dir_exists <- function(dirpath) {
-  length(dirpath) > 0 && utils::file_test('-d', dirpath)
+  length(dirpath) > 0 && utils::file_test("-d", dirpath)
+}
+
+#' Checks a file exists
+file_exists <- function(filepath) {
+  length(filepath) > 0 && utils::file_test("-f", filepath)
+}
+
+#' Gets the path to the template folder of the specified template
+template.get_path <- function(template_name, package = "librarstemplates") {
+  system.file("rmarkdown", "templates", template_name, package = package)
 }
 
 #' Executes a batch of R commands in a different session

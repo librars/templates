@@ -4,10 +4,13 @@
 \alias{get_format_call}
 \title{Returns the proper function call to the desired librars format}
 \usage{
-get_format_call(format)
+get_format_call(format, extra_params = "")
 }
 \arguments{
 \item{format}{The name of the desired format function.}
+
+\item{extra_params}{The parameters to pass to the format invocation.
+Expecting value as a list: \code{param1=value1,papam2=value2,...}}
 }
 \value{
 The proper call to the desired format.

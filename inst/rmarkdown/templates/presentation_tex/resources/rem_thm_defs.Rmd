@@ -1,0 +1,7 @@
+```{r, echo=FALSE}
+options(bookdown.post.latex = function(x) {
+  from <- grep("usepackage\\{amsthm\\}", x)
+  to <- grep("newtheorem\\*\\{solution", x)
+  x <- x[-c(from:to)]
+})
+```

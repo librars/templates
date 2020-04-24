@@ -4,9 +4,11 @@
 \alias{book_tex_format}
 \title{Format function for book_tex template}
 \usage{
-book_tex_format(...)
+book_tex_format(clean_after = TRUE, ...)
 }
 \arguments{
+\item{clean_after}{A value indicating whether to clean after or not.}
+
 \item{...}{Arguments to \code{bookdown::pdf_book}.}
 }
 \value{

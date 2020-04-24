@@ -1,0 +1,6 @@
+name: LibRArs presentation (tex)
+description: >
+ Template for creating a TEX presentation for LibRArs
+format: presentation_tex_format
+preprocessor: presentation_tex_pre
+postprocessor: presentation_tex_post

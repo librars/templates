@@ -1,0 +1,2 @@
+# This is the second slide
+You can type here the content.

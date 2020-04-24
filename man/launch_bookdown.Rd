@@ -4,7 +4,7 @@
 \alias{launch_bookdown}
 \title{Launches bookdown to create the book}
 \usage{
-launch_bookdown(path, template_name)
+launch_bookdown(path, template_name, clean_after = TRUE)
 }
 \arguments{
 \item{path}{The path to the directory where files are. This is the working directory where

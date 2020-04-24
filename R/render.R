@@ -42,7 +42,7 @@ render <- function(input,
   process_rmd_files(intermediate_path)
 
   # From here, bookdown is ready to take over
-  compile_book(intermediate_path, template_name, input)
+  compile_artifacts(intermediate_path, template_name, input, clean_after = clean_after)
 
   # Clean at the end
   if (clean_after) {
@@ -290,20 +290,24 @@ def_format <- "book_tex_format"
 #' Returns the proper function call to the desired librars format
 #' 
 #' @param format The name of the desired format function.
+#' @param extra_params The parameters to pass to the format invocation.
+#'   Expecting value as a list: \code{param1=value1,papam2=value2,...}
 #' @return The proper call to the desired format.
-get_format_call <- function(format) {
+get_format_call <- function(format, extra_params = "") {
+  parenthesized_expr <- paste("(", extra_params, ")", sep = "")
   ifelse (grepl("librarstemplates::", format),
-          paste(format, "()", sep = ""),
-          paste("librarstemplates::", format, "()", sep = ""))
+          paste(format, parenthesized_expr, sep = ""),
+          paste("librarstemplates::", format, parenthesized_expr, sep = ""))
 }
 
-#' Compiles the book running preprocessor, launching bookdown and running postprocessor
+#' Compiles the artifacts running preprocessor, launching bookdown and running postprocessor
 #' 
 #' @param path The path to the directory where files are. This is the working directory where
 #'     bookdown will run and it expects to have all Rmd files and template support files too.
 #' @param template_name The template to use.
 #' @param dstpath The path where to move the final artifacts once generated.
-compile_book <- function(path, template_name, dstpath) {
+#' @param ... Parameters to pass to \code{launch_bookdown}.
+compile_artifacts <- function(path, template_name, dstpath, ...) {
   template_functions <- retrieve_template_functions(template_name)
 
   # Deploy template files
@@ -316,7 +320,7 @@ compile_book <- function(path, template_name, dstpath) {
   }
 
   # Launch Bookdown
-  launch_bookdown(path, template_name)
+  launch_bookdown(path, template_name, ...)
 
   # Run postprocessor
   if (!is.null(template_functions$postprocessor)) {
@@ -330,7 +334,7 @@ compile_book <- function(path, template_name, dstpath) {
 #' @param path The path to the directory where files are. This is the working directory where
 #'     bookdown will run and it expects to have all Rmd files and template support files too.
 #' @param template_name The template to use.
-launch_bookdown <- function(path, template_name) {
+launch_bookdown <- function(path, template_name, clean_after = TRUE) {
   template_info <- get_template_info(template_name)
 
   # Check the presence of the format function (mandatory)
@@ -338,7 +342,8 @@ launch_bookdown <- function(path, template_name) {
     stop("The template.yaml for template", template_name, "must contain field 'format'")
   }
 
-  template_format_invocation <- get_format_call(template_info$format)
+  format_call_extra_params <- ifelse(clean_after, "", "clean_after=FALSE")
+  template_format_invocation <- get_format_call(template_info$format, format_call_extra_params)
   quiet <- FALSE
   normalized_path <- normalize_path(path)
 

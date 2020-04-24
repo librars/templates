@@ -5,6 +5,7 @@
 #'
 #' @inheritParams bookdown::pdf_book
 #' @param ... Arguments to \code{bookdown::pdf_book}.
+#' @param clean_after A value indicating whether to clean after or not.
 #' @return R Markdown output format to pass to
 #'   \code{\link[bookdown::render_book]{render_book}}.
 #' @examples
@@ -13,10 +14,10 @@
 #' }
 #'
 #' @export
-book_tex_format <- function(...) {
+book_tex_format <- function(clean_after = TRUE, ...) {
   # Function \code{prepare_template} takes care of having template.tex
   # in place in the same directory where the files to compile are
-  bookdown::pdf_book(..., template = "template.tex")
+  bookdown::pdf_book(..., template = "template.tex", keep_tex = !clean_after)
 }
 
 #' Pre processing function for book_tex template

@@ -72,6 +72,17 @@ rmdconvert.scan <- function(rmd_src, debug.info = FALSE) {
 
 ### Environemnts ###
 
+supported.environments <- c(
+  "theorem",
+  "lemma",
+  "corollary",
+  "proposition",
+  "conjecture",
+  "definition",
+  "example",
+  "remark"
+)
+
 #' Sharp followed by bang, then optional spacing, then env name (label with no spaces),
 #' then mandatory spacing, then title (2 groups)
 regex.env_head_with_title <- "#\\![ \t]*([^ \\n\\t]+)[ \t]+(.+)"
@@ -101,6 +112,20 @@ regex.env.no_title <- s(regex.line_start,
 #' retrieved by using the variable name associated to the 'Pattern name' column
 #' of the table.
 #' 
+#' An environment is created by using the syntax: \code{#!<name> <title>}. E.g.
+#' \dontrun{
+#'   #!theorem Euler-Lagrange equation
+#'   The extremant functionals are to be found as the solutions of the
+#'   Euler-Lagrange equation.
+#' }
+#' Which gets translated into:
+#' \dontrun{
+#'   ```{theorem, name = "Euler-Lagrange equation"}
+#'   The extremant functionals are to be found as the solutions of the
+#'   Euler-Lagrange equation.
+#'   ```
+#' }
+#' 
 #' @param rmd_src The source Rmd string.
 #' @param debug.info When \code{TRUE} it will instruct the function to log debug info.
 #' @return The source string with all constructs replaced.
@@ -120,11 +145,11 @@ rmdconvert.scan.envs <- function(rmd_src, debug.info = FALSE) {
       groups <- stringr::str_match(match, pattern$regex) # matrix
       # Each of the groups, if not matched, will give NA
       before <- groups[, pattern$g_before]
-      name <- groups[, pattern$g_name]
+      name <- rmdconvert.check.get.env(groups[, pattern$g_name]) # Is environment whitelisted?
       title <- ifelse(is.null(pattern$g_title), NA, groups[, pattern$g_title])
       body <- groups[, pattern$g_body]
       after <- groups[, pattern$g_after]
-      result <- rmsconvert.create.env(name, body, title, before, after)
+      result <- rmdconvert.create.env(name, body, title, before, after)
       # Log operation
       if (debug.info) {
         log <<- rbind(log, c(pattern$name, match, result, 
@@ -140,6 +165,20 @@ rmdconvert.scan.envs <- function(rmd_src, debug.info = FALSE) {
   list(output = rmd_out, debug_info = tidy_log(log))
 }
 
+#' Checks whether the provided environment is supported
+#' 
+#' If not supported, an error is raised.
+#' 
+#' @param env_name The name of the environment to check
+#' @return The environment (lower-case), otherwise error is raised.
+rmdconvert.check.get.env <- function(env_name) {
+  final_env_name <- tolower(env_name)
+  if (!(final_env_name %in% supported.environments)) {
+    stop(paste("Environment", final_env_name, "not supported"))
+  }
+  final_env_name
+}
+
 #' Creates the transformed output for an environment
 #' 
 #' @param name The name of the environment.
@@ -147,7 +186,7 @@ rmdconvert.scan.envs <- function(rmd_src, debug.info = FALSE) {
 #' @param title The title of the environment.
 #' @param before The before content.
 #' @param after The after content.
-rmsconvert.create.env <- function(name, body, title = NA, before = NA, after = NA) {
+rmdconvert.create.env <- function(name, body, title = NA, before = NA, after = NA) {
   cbefore <- ifelse(is.na(before), "", before)
   cafter <- ifelse(is.na(after), "", after)
   label <- ifelse(is.na(title),

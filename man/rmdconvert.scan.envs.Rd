@@ -22,3 +22,18 @@ Using the table you get from the previous command, use
 retrieved by using the variable name associated to the 'Pattern name' column
 of the table.
 }
+\details{
+An environment is created by using the syntax: \code{#!<name> <title>}. E.g.
+\dontrun{
+  #!theorem Euler-Lagrange equation
+  The extremant functionals are to be found as the solutions of the
+  Euler-Lagrange equation.
+}
+Which gets translated into:
+\dontrun{
+  ```{theorem, name = "Euler-Lagrange equation"}
+  The extremant functionals are to be found as the solutions of the
+  Euler-Lagrange equation.
+  ```
+}
+}

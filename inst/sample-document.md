@@ -6,6 +6,18 @@ This is more test.
 
 This _text is italic_, and *so is this*. While __this text is bold__, the same **as this one**.
 
+## Cognitive load
+The idea is to reduce the amount of syntactic constructs to memorize:
+
+- Headings and sections
+- Text formatting (bold, italic)
+- Links, references, images
+- Code blocks
+    - Verbatim
+    - Executable code
+    - Math
+- Conditional blocks
+
 ## Links and images
 This is [a link](http://some.net).
 
@@ -27,21 +39,35 @@ This is a code
 (function(){ console.log })();
 ```
 
-To added code in R to run:
+The inline version is `code inline`. To add code in R to run:
 
-```!r
-# Run this r code
-paste("hello", "world")
+```!
+# Run this r code and display the result
+5 + 4
 ```
 
-Code can be added inline as: `inline verbatin` (no syntax supported for specifying specific languages to highlight). It is possible to run inline as well by using: `!r 1+2`.
+```!silent
+# Run this r code silently
+a <- paste("hello", "world")
+```
+
+It is possible to run inline as well by using: `! 1+2`.
 
 ## Math
-To add math, it is possible to do inline using $\int f$. And block using:
+To add math, it is possible to do inline using `m \int f`. And block using:
 
-$$
+```m
 \int_a^b f(x) dx
-$$
+```
+
+And with a label:
+
+```m
+![eq-1]
+\int_a^b f(x) dx
+```
+
+To be referenced like: equation !(eq-1)
 
 ## Labels
 A label can be applied to a block by using an anchor in text ![anchor-1].
@@ -92,3 +118,13 @@ To render and embed the result of a latex expression:
 ...
 \end{tikz}
 ```
+
+## Conditionals
+A piece can be hidden or displayed using conditional blocks:
+
+{{if b1}}
+
+### Dynamical content
+Stuff in here might be shown or not depending on whether `b1` is defined or not.
+
+{{end}}

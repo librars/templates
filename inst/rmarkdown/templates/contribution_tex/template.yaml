@@ -1,0 +1,6 @@
+name: LibRArs contribution (tex)
+description: >
+ Template for creating a TEX contribution text for LibRArs
+format: contribution_tex_format
+preprocessor: contribution_tex_pre
+postprocessor: contribution_tex_post

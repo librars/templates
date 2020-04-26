@@ -2,16 +2,16 @@
 % Please edit documentation in R/render.R
 \name{process_rmd_files}
 \alias{process_rmd_files}
-\title{Parses all Rmd files into bookdown Rmd}
+\title{Processes all Rmd files in a directory}
 \usage{
-process_rmd_files(path)
+process_rmd_files(files)
 }
 \arguments{
-\item{path}{The folder where to search Rmd files.}
+\item{files}{The vector of file paths to process.}
 }
 \value{
 The list of the paths of processed files.
 }
 \description{
-The function will chanbge the original files.
+The function will change the original files.
 }

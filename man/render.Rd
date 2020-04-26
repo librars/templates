@@ -11,7 +11,8 @@ render(input, template_name = "book_tex", output = NULL,
 \item{input}{Path to the directory containing the files to process.
 The directory must contain an index.md file.}
 
-\item{template_name}{The name of the template to use. This is the name appearing tin the \code{templates} folder.}
+\item{template_name}{The name of the template to use. This is the name of the template
+directory in the \code{templates} folder.}
 
 \item{output}{The directory path where to save the generated output.
 If not specirfied, it will the same as input.}

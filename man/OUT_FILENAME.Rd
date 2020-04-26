@@ -3,12 +3,12 @@
 \docType{data}
 \name{OUT_FILENAME}
 \alias{OUT_FILENAME}
-\title{Merged Rmd file name}
+\title{Out Rmd file name}
 \format{An object of class \code{character} of length 1.}
 \usage{
 OUT_FILENAME
 }
 \description{
-Merged Rmd file name
+Out Rmd file name
 }
 \keyword{datasets}

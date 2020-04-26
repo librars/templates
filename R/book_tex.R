@@ -3,21 +3,21 @@
 #' This format renders a PDF and selects the template available
 #' in the folder at the moment of rendering.
 #'
-#' @inheritParams bookdown::pdf_book
-#' @param ... Arguments to \code{bookdown::pdf_book}.
+#' @inheritParams rmarkdown::pdf_document
+#' @param ... Arguments to \code{rmarkdown::pdf_document}.
 #' @param clean_after A value indicating whether to clean after or not.
 #' @return R Markdown output format to pass to
-#'   \code{\link[bookdown::render_book]{render_book}}.
+#'   \code{\link[librarstemplates::render]{render}}.
 #' @examples
 #' \dontrun{
-#' bookdown::render_book("MyArticle.Rmd", librarstemplates::book_tex_format())
+#' librarstemplates::render("./book/", librarstemplates::book_tex_format())
 #' }
 #'
 #' @export
 book_tex_format <- function(clean_after = TRUE, ...) {
   # Function \code{prepare_template} takes care of having template.tex
   # in place in the same directory where the files to compile are
-  bookdown::pdf_book(..., template = "template.tex", keep_tex = !clean_after)
+  rmarkdown::pdf_document(..., template = "template.tex", keep_tex = !clean_after)
 }
 
 #' Pre processing function for book_tex template
@@ -28,7 +28,7 @@ book_tex_format <- function(clean_after = TRUE, ...) {
 #' @param dir The directory where the files are located.
 #' @export
 book_tex_pre <- function(dir) {
-  pre.append_res_to_index_rmd(dir, "book_tex", "rem_thm_defs.Rmd")
+  #pre.append_res_to_index_rmd(dir, "book_tex", "rem_thm_defs.Rmd")
 }
 
 #' Post processing function for book_tex template

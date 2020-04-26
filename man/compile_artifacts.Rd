@@ -4,17 +4,19 @@
 \alias{compile_artifacts}
 \title{Compiles the artifacts running preprocessor, launching bookdown and running postprocessor}
 \usage{
-compile_artifacts(path, template_name, dstpath, ...)
+compile_artifacts(dir_path, file_path, template_name, dstpath, ...)
 }
 \arguments{
-\item{path}{The path to the directory where files are. This is the working directory where
-bookdown will run and it expects to have all Rmd files and template support files too.}
+\item{dir_path}{The path to directory containing the resources.
+Rmarkdown will rely on having all template resources there.}
+
+\item{file_path}{The path to the file to process. Rmarkdown will parse it.}
 
 \item{template_name}{The template to use.}
 
 \item{dstpath}{The path where to move the final artifacts once generated.}
 
-\item{...}{Parameters to pass to \code{launch_bookdown}.}
+\item{...}{Parameters to pass to \code{launch_rmarkdown}.}
 }
 \description{
 Compiles the artifacts running preprocessor, launching bookdown and running postprocessor

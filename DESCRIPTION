@@ -23,9 +23,8 @@ Imports:
     jsonlite,
     xfun,
     yaml (>= 2.1.19),
-    bookdown (== 0.18),
+    knitr (== 1.28),
     rmarkdown (== 2.1)
 Suggests: 
-    knitr,
     testthat
 VignetteBuilder: knitr

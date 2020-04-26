@@ -8,7 +8,8 @@ NULL
 #' 
 #' @param input Path to the directory containing the files to process.
 #'     The directory must contain an index.md file.
-#' @param template_name The name of the template to use. This is the name appearing tin the \code{templates} folder.
+#' @param template_name The name of the template to use. This is the name of the template
+#'     directory in the \code{templates} folder.
 #' @param output The directory path where to save the generated output.
 #'     If not specirfied, it will the same as input.
 #' @param intermediate_dir The directory path where the intermediate folder will be created.
@@ -25,24 +26,29 @@ render <- function(input,
                    intermediate_dir = NULL,
                    clean_after = TRUE,
                    index_filename = NULL) {
-  config <- list(
+  settings <- list(
     template_name = ifelse(!is.character(template_name) || nchar(template_name) == 0, "book_tex", template_name),
     intermediate_dir = ifelse(is.null(intermediate_dir), input, intermediate_dir),
     index_filename = ifelse(is.null(index_filename), INDEX_FILENAME, index_filename)
   )
 
   # Prepare environment, copy all files in there, and create intermediate folder
-  intermediate_path <- prepare_env(config$intermediate_dir) # normalized
+  intermediate_path <- prepare_env(settings$intermediate_dir) # normalized
 
-  # Process TOC file and generate _bookdown.yml and index.Rmd
-  generate_config_file(file.path(intermediate_path, config$index_filename), intermediate_path, TRUE)
-  generate_indexrmd_file(file.path(intermediate_path, config$index_filename), intermediate_path, TRUE)
+  # Process TOC file and generate the yaml header
+  config <- get_configuration(file.path(intermediate_path, settings$index_filename))
+  yml_file_path <- generate_rmd_yaml_header(config, intermediate_path)
 
-  # Process every Rmd file in order to parse it to bookdown-format Rmd
-  process_rmd_files(intermediate_path)
+  # Merge all chapters in one file
+  merged_file_path <- file.path(intermediate_path, MERGED_FILENAME)
+  merge_chapters(c(yml_file_path, file.path(intermediate_path, config$rmd_files)), merged_file_path)
 
-  # From here, bookdown is ready to take over
-  compile_artifacts(intermediate_path, template_name, input, clean_after = clean_after)
+  # Process the merged Rmd file to transform everything necessary
+  # before having markdown kick in
+  process_rmd_files(merged_file_path) # Only one file (our strategy)
+
+  # From here, rmarkdown is ready to take over
+  compile_artifacts(intermediate_path, merged_file_path, template_name, input, clean_after = clean_after)
 
   # Clean at the end
   if (clean_after) {
@@ -85,118 +91,66 @@ clean_env <- function(intermediate_path) {
   unlink(intermediate_path, recursive = TRUE)
 }
 
-#' Generates the _bookdown.yml configuration file
+#' Generates the YAML header given the configuration
 #' 
-#' Generates the _bookdown.yml file at the specified location.
+#' @param config The configuration object.
+#' @param dir_path The path to the directory where to place the generated Rmd file.
+#' @return The path to the generated file.
+generate_rmd_yaml_header <- function(config, dir_path) {
+  yml <- list()
+
+  yml$title <- config$title
+  yml$author <- config$author
+
+  file_path <- file.path(dir_path, YML_HEADER_FILENAME)
+  unlink(file_path)
+  write_utf8(paste("---", yaml::as.yaml(yml), "---", sep = "\n"), file_path)
+
+  file_path
+}
+
+#' Gets the configuration object out of the toc file
 #' 
-#' @param input The path to the index/toc file to parse and translate.
-#' @param output The path to the directory where to emit the yml file.
-#' @param no_override A value indicating whether to allow overriding existing files.
-#' @return The path to the generated yml file.
-generate_config_file <- function(input, output, no_override = FALSE) {
-  if (!file.exists(input)) {
+#' Includes:
+#' - title
+#' - rmd_files
+#' - output_dir
+#' - out_filename
+#' - subtitle
+#' - author
+#' 
+#' @param input The toc (md) file.
+#' @return The configuration object.
+get_configuration <- function(input) {
+  if (!nzchar(input) || !file.exists(input)) {
     stop(paste("File", input, "could not be found"))
   }
 
-  yml_filepath <- normalize_path(file.path(output, BOOKMARK_YML_FILENAME))
-  if (no_override && file.exists(yml_filepath)) {
-    stop(paste("Output file", yml_filepath, "already exists, will not override"))
-  }
-
-  index_content <- get_file_content(input)
-  write_file(yaml::as.yaml(generate_config(index_content)), yml_filepath)
-
-  yml_filepath
-}
-
-#' Generates the index.Rmd front matter file
-#' 
-#' Generates the index.Rmd file at the specified location.
-#' 
-#' @param input The path to the index/toc file to parse and translate.
-#' @param output The path to the directory where to emit the yml file.
-#' @param no_override A value indicating whether to allow overriding existing files.
-#' @return The path to the generated yml file.
-generate_indexrmd_file <- function(input, output, no_override = FALSE) {
-  if (!file.exists(input)) {
-    stop(paste("File", input, "could not be found"))
-  }
-
-  rmd_filepath <- normalize_path(file.path(output, INDEX_RMD_FILENAME))
-  if (no_override && file.exists(rmd_filepath)) {
-    stop(paste("Output file", rmd_filepath, "already exists, will not override"))
-  }
-
-  index_content <- get_file_content(input)
-
-  rmd_content_frontmatter <- yaml::as.yaml(generate_indexrmd(index_content))
-  rmd_content <- c("---", rmd_content_frontmatter, "---")
-  writeLines(rmd_content, rmd_filepath)
-
-  rmd_filepath
-}
-
-#' Generates the content of the _bookdown.yml file
-#' 
-#' As per \link{https://bookdown.org/yihui/bookdown/configuration.html#configuration}.
-#' 
-#' @param input The input content of the index/toc file.
-#' @return The content of the _bookdown.yml file emitted as a list.
-generate_config <- function(input) {
-  if (!is.character(input)) {
-    stop(paste("Invalid input:", input))
-  }
-
-  # Make sure to always have \n as newline
-  normalized_input <- normalize_string_newlines(input)
-
-  yml <- list()
-
-  # Mandatory fields
-  matcher.chapter_item <- list(pattern = "-\\s*(.+)(\\n|$)", group_no = 2)
-
-  # Fetch mandatory fields
-  yml$rmd_files <- paste(extract_tocfile_metadata(normalized_input,
-                                                  matcher.chapter_item$pattern,
-                                                  matcher.chapter_item$group_no),
-                         FILE_EXT,
-                         sep = ".")
-  yml$output_dir <- OUT_DIRNAME
-  yml$book_filename <- OUT_FILENAME
-
-  # Add index.Rmd in rmd_files in order to show title and author
-  yml$rmd_files <- c(INDEX_RMD_FILENAME, yml$rmd_files)
-
-  yml
-}
-
-#' Generates the content of the index.Rmd file
-#' 
-#' @param input The input content of the index/toc file.
-#' @return The content of the index.Rmd file emitted as a list.
-generate_indexrmd <- function(input) {
-  if (!is.character(input)) {
-    stop(paste("Invalid input:", input))
-  }
-
-  # Make sure to always have \n as newline
-  normalized_input <- normalize_string_newlines(input)
-
-  yml <- list()
+  input_content <- normalize_string_newlines(get_file_content(input))
 
   # Mandatory fields
   matcher.title <- list(pattern = "([^#]|^)#[^#](\\s*.+)(\\n|$)", group_no = 3)
+  matcher.chapter_item <- list(pattern = "-\\s*(.+)(\\n|$)", group_no = 2)
   # Optional fields
   matcher.subtitle <- list(pattern = "([^#]|^)##[^#](\\s*.+)(\\n|$)", group_no = 3)
   matcher.author <- list(pattern = "([^#]|^)###[^#]Author\\n+(.+)(\\n|$)", group_no = 3)
 
-  # Fetch mandatory fields
-  yml$title <- extract_tocfile_metadata(normalized_input, matcher.title$pattern, matcher.title$group_no)
-  # Handle optional fields
-  yml$subtitle <- extract_tocfile_metadata(normalized_input, matcher.subtitle$pattern, matcher.subtitle$group_no)
-  yml$author <- extract_tocfile_metadata(normalized_input, matcher.author$pattern, matcher.author$group_no)
+  config <- list()
 
-  yml
+  # Fetch mandatory fields
+  config$title <- extract_tocfile_metadata(input_content, matcher.title$pattern, matcher.title$group_no)
+  config$rmd_files <- paste(extract_tocfile_metadata(input_content,
+                                                     matcher.chapter_item$pattern,
+                                                     matcher.chapter_item$group_no),
+                            FILE_EXT,
+                            sep = ".") # TODO: be resilient to ext already present
+  config$output_dir <- OUT_DIRNAME
+  config$out_filename <- OUT_FILENAME
+  # Handle optional fields
+  config$subtitle <- extract_tocfile_metadata(input_content, matcher.subtitle$pattern, matcher.subtitle$group_no)
+  config$author <- extract_tocfile_metadata(input_content, matcher.author$pattern, matcher.author$group_no)
+
+  config
 }
 
 #' Extracts relevant metadata from index.md toc file
@@ -229,28 +183,77 @@ extract_tocfile_metadata <- function(text, pattern, group_no) {
   metadata
 }
 
-#' Parses all Rmd files into bookdown Rmd
-#' 
-#' The function will chanbge the original files.
-#' 
-#' @param path The folder where to search Rmd files.
-#' @return The list of the paths of processed files.
-process_rmd_files <- function(path) {
-  if (!dir.exists(path)) {
-    stop(paste("Directory", path, "could not be found"))
+#' Merge all the chapters together
+merge_chapters = function(files, dst_file_path, before = NULL, after = NULL, orig = files) {
+  content = unlist(mapply(files, orig, SIMPLIFY = FALSE, FUN = function(f, o) {
+    x = read_utf8(f) # TODO: use function in utils or create one specific for UTF8
+    x = insert_code_chunk(x, before, after)
+    c(x, "", paste0("<!--chapter:end:", o, "-->"), "")
+  }))
+  
+  unlink(dst_file_path)
+  write_utf8(content, dst_file_path)
+  Sys.chmod(dst_file_path, "644")
+}
+
+#' Gets the number of matching '---'
+match_dashes = function(x) grep("^---\\s*$", x)
+
+#' Gets a vector with before, x and after
+insert_code_chunk = function(x, before, after) {
+  if (length(before) + length(after) == 0) {
+    return(x)
+  }
+  if (length(x) == 0 || length(match_dashes(x[1])) == 0) {
+    return(c(before, x, after))
   }
 
-  normalized_path <- normalize_path(path)
+  i = match_dashes(x)
+  if (length(i) < 2) {
+    warning("There may be something wrong with your YAML frontmatter (no closing ---)")
+    return(c(before, x, after))
+  }
 
-  files_to_process <- file.path(normalized_path, list.files(path = normalized_path, pattern = "\\.Rmd$"))
+  # Insert `before` after the line i[2], i.e. the second ---
+  c(append(x, before, i[2]), after)
+}
 
-  for (file in files_to_process) {
+#' Generates the _bookdown.yml configuration file
+#' 
+#' Generates the _bookdown.yml file at the specified location.
+#' 
+#' @param input The path to the index/toc file to parse and translate.
+#' @param output The path to the directory where to emit the yml file.
+#' @param no_override A value indicating whether to allow overriding existing files.
+#' @return The path to the generated yml file.
+generate_config_file <- function(input, output, no_override = FALSE) {
+  if (!file.exists(input)) {
+    stop(paste("File", input, "could not be found"))
+  }
+
+  yml_filepath <- normalize_path(file.path(output, BOOKMARK_YML_FILENAME))
+  if (no_override && file.exists(yml_filepath)) {
+    stop(paste("Output file", yml_filepath, "already exists, will not override"))
+  }
+
+  index_content <- get_file_content(input)
+  write_file(yaml::as.yaml(generate_config(index_content)), yml_filepath)
+
+  yml_filepath
+}
+
+#' Processes all Rmd files in a directory
+#' 
+#' The function will change the original files.
+#' 
+#' @param files The vector of file paths to process.
+#' @return The list of the paths of processed files.
+process_rmd_files <- function(files) {
+  for (file in files) {
     file_content <- get_file_content(file)
     new_file_content <- process_rmd_file(file_content)
     write_file(new_file_content, file)
   }
-
-  files_to_process
 }
 
 #' Parses the content of a file and generates the Rmd that will be fed to Bookdown
@@ -284,57 +287,41 @@ retrieve_template_functions <- function(template_name) {
   )
 }
 
-#' The default format
-def_format <- "book_tex_format"
-
-#' Returns the proper function call to the desired librars format
-#' 
-#' @param format The name of the desired format function.
-#' @param extra_params The parameters to pass to the format invocation.
-#'   Expecting value as a list: \code{param1=value1,papam2=value2,...}
-#' @return The proper call to the desired format.
-get_format_call <- function(format, extra_params = "") {
-  parenthesized_expr <- paste("(", extra_params, ")", sep = "")
-  ifelse (grepl("librarstemplates::", format),
-          paste(format, parenthesized_expr, sep = ""),
-          paste("librarstemplates::", format, parenthesized_expr, sep = ""))
-}
-
 #' Compiles the artifacts running preprocessor, launching bookdown and running postprocessor
 #' 
-#' @param path The path to the directory where files are. This is the working directory where
-#'     bookdown will run and it expects to have all Rmd files and template support files too.
+#' @param dir_path The path to directory containing the resources.
+#'     Rmarkdown will rely on having all template resources there.
+#' @param file_path The path to the file to process. Rmarkdown will parse it.
 #' @param template_name The template to use.
 #' @param dstpath The path where to move the final artifacts once generated.
-#' @param ... Parameters to pass to \code{launch_bookdown}.
-compile_artifacts <- function(path, template_name, dstpath, ...) {
+#' @param ... Parameters to pass to \code{launch_rmarkdown}.
+compile_artifacts <- function(dir_path, file_path, template_name, dstpath, ...) {
   template_functions <- retrieve_template_functions(template_name)
 
   # Deploy template files
-  prepare_template(template = template_name, dir = path)
+  prepare_template(template = template_name, dir = dir_path)
 
   # Run preprocessor
   if (!is.null(template_functions$preprocessor)) {
     print("Running preprocessor...")
-    template_functions$preprocessor(path)
+    template_functions$preprocessor(dir_path)
   }
 
-  # Launch Bookdown
-  launch_bookdown(path, template_name, ...)
+  # Launch Rmarkdown
+  launch_rmarkdown(file_path, template_name, ...)
 
   # Run postprocessor
   if (!is.null(template_functions$postprocessor)) {
     print("Running postprocessor...")
-    template_functions$postprocessor(path, dstpath)
+    template_functions$postprocessor(dir_path, dstpath)
   }
 }
 
-#' Launches bookdown to create the book
+#' Launches Rmarkdown to create the book
 #' 
-#' @param path The path to the directory where files are. This is the working directory where
-#'     bookdown will run and it expects to have all Rmd files and template support files too.
+#' @param path The path to the file to process. Rmarkdown will parse it.
 #' @param template_name The template to use.
-launch_bookdown <- function(path, template_name, clean_after = TRUE) {
+launch_rmarkdown <- function(path, template_name, clean_after = TRUE) {
   template_info <- get_template_info(template_name)
 
   # Check the presence of the format function (mandatory)
@@ -342,18 +329,16 @@ launch_bookdown <- function(path, template_name, clean_after = TRUE) {
     stop("The template.yaml for template", template_name, "must contain field 'format'")
   }
 
-  format_call_extra_params <- ifelse(clean_after, "", "clean_after=FALSE")
-  template_format_invocation <- get_format_call(template_info$format, format_call_extra_params)
-  quiet <- FALSE
-  normalized_path <- normalize_path(path)
+  output_format <- get0(template_info$format, as.environment("package:librarstemplates"))
+  if (is.null(output_format)) {
+    stop(paste("Output format", template_info$format, "could not be found"))
+  }
 
-  # Bookdown does not properly support passing paths to folders on which running,
-  # therefore we need to create a new sessions and run there
-  cmd = paste(sprintf("setwd('%s')", normalized_path),
-              sprintf("bookdown::render_book('index.Rmd', %s, quiet = %s)", template_format_invocation, quiet), 
-              sep = ";")
+  print(paste("Invoking Rmarkdown with format:", template_info$format))
 
-  print(paste("Invoking bookdown:", cmd, "..."))
-
-  Rscript(c("-e", shQuote(cmd)))
+  rmarkdown::render(path,
+                    output_format(clean_after = clean_after),
+                    clean = clean_after,
+                    envir = parent.frame(),
+                    encoding = "UTF-8")
 }

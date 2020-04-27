@@ -9,11 +9,11 @@ book_tex_format(clean_after = TRUE, ...)
 \arguments{
 \item{clean_after}{A value indicating whether to clean after or not.}
 
-\item{...}{Arguments to \code{bookdown::pdf_book}.}
+\item{...}{Arguments to \code{rmarkdown::pdf_document}.}
 }
 \value{
 R Markdown output format to pass to
-  \code{\link[bookdown::render_book]{render_book}}.
+  \code{\link[librarstemplates::render]{render}}.
 }
 \description{
 This format renders a PDF and selects the template available
@@ -21,7 +21,7 @@ in the folder at the moment of rendering.
 }
 \examples{
 \dontrun{
-bookdown::render_book("MyArticle.Rmd", librarstemplates::book_tex_format())
+librarstemplates::render("./book/", librarstemplates::book_tex_format())
 }
 
 }

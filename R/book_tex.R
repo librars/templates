@@ -17,18 +17,15 @@
 book_tex_format <- function(clean_after = TRUE, ...) {
   # Function \code{prepare_template} takes care of having template.tex
   # in place in the same directory where the files to compile are
-  rmarkdown::pdf_document(..., template = "template.tex", keep_tex = !clean_after)
+  pdf_format(..., template = "template.tex", keep_tex = !clean_after, add_math_defs = FALSE)
 }
 
 #' Pre processing function for book_tex template
 #' 
-#' In this context, we need to apply the fix/hack as explained
-#' in \link{https://github.com/rstudio/bookdown/issues/750}.
-#' 
 #' @param dir The directory where the files are located.
 #' @export
 book_tex_pre <- function(dir) {
-  #pre.append_res_to_index_rmd(dir, "book_tex", "rem_thm_defs.Rmd")
+  # Nothing to do
 }
 
 #' Post processing function for book_tex template

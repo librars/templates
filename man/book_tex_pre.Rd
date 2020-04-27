@@ -10,6 +10,5 @@ book_tex_pre(dir)
 \item{dir}{The directory where the files are located.}
 }
 \description{
-In this context, we need to apply the fix/hack as explained
-in \link{https://github.com/rstudio/bookdown/issues/750}.
+Pre processing function for book_tex template
 }

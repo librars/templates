@@ -79,6 +79,14 @@ write_utf8 <- function(text, con, ...) {
   writeLines(enc2utf8(text), con, ..., useBytes = TRUE)
 }
 
+opts = knitr:::new_defaults(list(config = list()))
+
+with_ext <- function(file, ext) {
+  xfun::with_ext(file, ext)
+}
+
+str_trim = function(x) gsub('^\\s+|\\s+$', '', x)
+
 #' Invokes \code{yaml::load}
 yaml_load <- function(...) yaml::yaml.load(..., eval.expr = TRUE)
 

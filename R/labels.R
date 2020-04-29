@@ -1,5 +1,6 @@
 # default names for labels
 label_names <- list(fig = 'Figure ', tab = 'Table ', eq = 'Equation ')
+
 # prefixes for theorem environments
 theorem_abbr <- c(
   theorem = 'thm', lemma = 'lem', corollary = 'cor', proposition = 'prp', conjecture = 'cnj',
@@ -9,8 +10,10 @@ theorem_abbr <- c(
 label_names_math <- setNames(list(
   'Theorem ', 'Lemma ', 'Corollary ', 'Proposition ', 'Conjecture ', 'Definition ', 'Example ', 'Exercise '
 ), theorem_abbr)
+
 # unnumbered math environments
 label_names_math2 <- list(proof = 'Proof. ', remark = 'Remark. ', solution = 'Solution. ')
+
 all_math_env <- c(names(theorem_abbr), names(label_names_math2))
 
 label_names <- c(label_names, label_names_math)
@@ -18,8 +21,6 @@ label_names <- c(label_names, label_names_math)
 # types of labels currently supported, e.g. \(#fig:foo), \(#tab:bar)
 label_types = names(label_names)
 reg_label_types = paste(label_types, collapse = '|')
-# compatibility with bookdown <= 0.4.7: ex was the prefix for Example; now it's exm
-reg_label_types = paste(reg_label_types, 'ex', sep = '|')
 
 # given a label, e.g. fig:foo, figure out the appropriate prefix
 label_prefix <- function(type, dict = label_names) {

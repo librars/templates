@@ -42,59 +42,80 @@ pdf_format = function(toc = TRUE,
                       toc_bib = FALSE,
                       quote_footer = NULL,
                       highlight_bw = FALSE,
-                      add_math_defs = TRUE
+                      add_math_defs = TRUE,
+                      to_pdf = TRUE
                      ) {
-  config = get_base_format(base_format, list(
+  config <- get_base_format(base_format, list(
     toc = toc, number_sections = number_sections, fig_caption = fig_caption,
     pandoc_args = pandoc_args2(pandoc_args), ...))
 
-  config$pandoc$ext = '.tex'
-  post = config$post_processor  # in case a post processor have been defined
-  config$post_processor = function(metadata, input, output, clean, verbose) {
-    if (is.function(post)) output = post(metadata, input, output, clean, verbose)
-    f = with_ext(output, '.tex')
-    x = resolve_refs_latex(read_utf8(f))
-    x = resolve_ref_links_latex(x)
-    x = restore_part_latex(x)
-    x = restore_appendix_latex(x, toc_appendix)
-    if (!toc_unnumbered) x = remove_toc_items(x)
-    if (toc_bib) x = add_toc_bib(x)
-    x = restore_block2(x, !number_sections, add_math_defs)
-    if (!is.null(quote_footer)) {
-      if (length(quote_footer) != 2 || !is.character(quote_footer)) warning(
-        "The 'quote_footer' argument should be a character vector of length 2"
-      ) else x = process_quote_latex(x, quote_footer)
+  # Ensure proper extension: Pandoc to output Latex
+  config$pandoc$ext = ".tex"
+
+  # Post processor (after Pandoc's compile, output is Latex)
+  post <- config$post_processor  # In case a post processor have been defined
+  # metadata: settings and options
+  # output: the path to file being processed
+  config$post_processor <- function(metadata, input, output, clean, verbose) {
+    if (is.function(post)) {
+      output <- post(metadata, input, output, clean, verbose)
     }
-    if (highlight_bw) x = highlight_grayscale_latex(x)
-    post = getOption('bookdown.post.latex') # TODO: handle
-    if (is.function(post)) x = post(x)
+
+    # Pipeline
+    f <- with_ext(output, ".tex")
+    x <- resolve_refs_latex(read_utf8(f))
+    x <- resolve_ref_links_latex(x)
+    x <- restore_appendix_latex(x, toc_appendix)
+    if (!toc_unnumbered) x <- remove_toc_items(x)
+    if (toc_bib) x <- add_toc_bib(x)
+    x <- restore_block2(x, !number_sections, add_math_defs)
+    if (!is.null(quote_footer)) {
+      if (length(quote_footer) != 2 || !is.character(quote_footer)) {
+        warning("The 'quote_footer' argument should be a character vector of length 2")
+      } else {
+        x <- process_quote_latex(x, quote_footer)
+      }
+    }
+    if (highlight_bw) x <- highlight_grayscale_latex(x)
+
+    # Rewrite new content
     write_utf8(x, f)
 
-    tinytex::latexmk(
-      f, config$pandoc$latex_engine,
-      if ('--biblatex' %in% config$pandoc$args) 'biber' else 'bibtex'
-    )
+    # Compile Latex into PDF
+    if (to_pdf) {
+      tinytex::latexmk(f, config$pandoc$latex_engine,
+                       if ("--biblatex" %in% config$pandoc$args) "biber" else "bibtex")
+    }
 
-    output = with_ext(output, '.pdf')
-    o = opts$get('output_dir')
-    keep_tex = isTRUE(config$pandoc$keep_tex)
-    if (!keep_tex) file.remove(f)
-    if (is.null(o)) return(output)
+    output <- with_ext(output, ".pdf")
+    o <- opts$get("output_dir")
+    keep_tex <- isTRUE(config$pandoc$keep_tex)
+    if (!keep_tex) {
+      file.remove(f)
+    }
+    if (is.null(o)) {
+      return(output)
+    }
 
-    output2 = file.path(o, output)
+    output2 <- file.path(o, output)
     file.rename(output, output2)
-    if (keep_tex) file.rename(f, file.path(o, f))
+    if (keep_tex) {
+      file.rename(f, file.path(o, f))
+    }
     output2
   }
-  # always enable tables (use packages booktabs, longtable, ...)
+
+  # Pre processor (before Pandoc's compile)
   pre = config$pre_processor
-  config$pre_processor = function(...) {
-    c(
-      if (is.function(pre)) pre(...), '--variable', 'tables=yes', '--standalone',
-      if (rmarkdown::pandoc_available('2.7.1')) '-Mhas-frontmatter=false'
+  config$pre_processor = function(metadata, input, runtime, knit_meta, files_dir, output_dir) {
+    pre_result <- if (is.function(pre)) pre(metadata, input, runtime, knit_meta, files_dir, output_dir)
+
+    # Always enable tables (use packages booktabs, longtable, ...)
+    c(pre_result, "--variable", "tables=yes", "--standalone",
+      if (rmarkdown::pandoc_available("2.7.1")) "-Mhas-frontmatter=false"
     )
   }
-  config$bookdown_output_format = 'latex'
+
   config = set_opts_knit(config)
   config
 }
@@ -119,19 +140,78 @@ get_base_format = function(format, options = list()) {
   do.call(format, options)
 }
 
-resolve_refs_latex = function(x) {
-  # equation references \eqref{}
-  x = gsub(
-    '(?<!\\\\textbackslash{})@ref\\((eq:[-/:[:alnum:]]+)\\)', '\\\\eqref{\\1}', x,
-    perl = TRUE
-  )
-  # normal references \ref{}
-  x = gsub(
-    '(?<!\\\\textbackslash{})@ref\\(([-/:[:alnum:]]+)\\)', '\\\\ref{\\1}', x,
-    perl = TRUE
-  )
-  x = gsub(sprintf('\\(\\\\#((%s):[-/[:alnum:]]+)\\)', reg_label_types), '\\\\label{\\1}', x)
-  x
+#' Resolve references, expects vector of lines
+resolve_refs_latex = function(x, use_amsmath = TRUE) {
+  eq_begins <- get_eq_block_begin_end_lines(x, TRUE) # Indices
+  eq_ends <- get_eq_block_begin_end_lines(x, FALSE) # Indices
+  if (identical(eq_begins, eq_ends)) {
+    stop("Number of openings and endings for equation environments mismatch")
+  }
+  labeldef_pattern <- "^(.*)(\\(label: (.*)\\))(.*)$"
+  # Indices where equation label definitions are
+  label_in_eq_block_matches_i <- get_label_matches_in_eq_block(x, labeldef_pattern, eq_begins, eq_ends)
+  # Equation label definition values
+  label_in_eq_block_matches <- gsub(labeldef_pattern, "\\3", x[label_in_eq_block_matches_i])
+
+  # References to labels: '[...](label: ...)' where label is
+  # defined inside 'begin{equation}...\end{equation}'
+  # We need to proceed line by line as we need to target different expressions
+  x2 <- c()
+  labelref_pattern <- "^(.*)(\\[.*\\]\\(label: (.*)\\))(.*)$"
+  labelref_repl <- "\\1\\\\%s\\{\\3\\}\\4"
+  labelref_repl_normal <- sprintf(labelref_repl, "ref")
+  labelref_repl_amsmatheq <- sprintf(labelref_repl, "eqref")
+  for (i in 1:length(x)) {
+    if (length(grep(labelref_pattern, x[i]))) {
+      label_name <- gsub(labelref_pattern, "\\3", x[i])
+      if (label_name %in% label_in_eq_block_matches) {
+        # The label this reference points to is an equation label
+        x2 <- c(x2, gsub(labelref_pattern, if (use_amsmath) labelref_repl_amsmatheq else labelref_repl_normal, x[i]))
+      } else {
+        # The label this reference points to is a normal label
+        x2 <- c(x2, gsub(labelref_pattern, labelref_repl_normal, x[i]))
+      }
+    } else {
+      # The line does not contain references to labels
+      x2 <- c(x2, x[i])
+    }
+  }
+
+  # Label definitions: '(label: ...)'
+  # Must be done after label references as the syntax for a reference
+  # include the syntax of definitions
+  x2 <- gsub(labeldef_pattern, "\\1\\\\label\\{\\3\\}\\4", x2)
+
+  x2
+}
+
+#' Gets the indices where labels are inside equation blocks
+get_label_matches_in_eq_block <- function(x, label_pattern, eq_begins, eq_ends) {
+  i <- grep(label_pattern, x) # Indices where all label defs are
+  # Check with eq begins and ends and return only the indices in blocks
+  i[is_inside_block(i, eq_begins, eq_ends)]
+}
+
+#' Gets TRUE when the index is inside a block whose
+#' opening and ending indices are provided, i is a vector
+is_inside_block <- function(i, begins, ends) {
+  unlist(lapply(i, FUN = function(k) {
+    for (j in 1:length(begins)) {
+      if (begins[j] < k && k < ends[j]) {
+        return(TRUE)
+      }
+    }
+    FALSE
+  }))
+}
+
+#' Get the lines where an equation block starts or terminates
+get_eq_block_begin_end_lines <- function(x, begin = TRUE) {
+  if (begin) {
+    grep("^.*\\\\begin\\{equation\\*?\\}.*$", x)
+  } else {
+    grep("^.*\\\\end\\{equation\\*?\\}.*$", x)
+  }
 }
 
 resolve_ref_links_latex = function(x) {
@@ -185,31 +265,6 @@ restore_ref_links = function(x, regexp, tags, txts, alt = TRUE) {
   x
 }
 
-restore_part_latex = function(x) {
-  r = '^\\\\(chapter|section)\\*\\{\\(PART(\\*)?\\)( |$)'
-  i = grep(r, x)
-  if (length(i) == 0) return(x)
-  x[i] = gsub(r, '\\\\part\\2{', x[i])
-  # remove (PART*) from the TOC lines for unnumbered parts
-  r = '^(\\\\addcontentsline\\{toc\\}\\{)(chapter|section)(\\}\\{)\\(PART\\*\\)( |$)'
-  x = gsub(r, '\\1part\\3', x)
-  # for numbered parts, remove the line \addcontentsline since it is not really
-  # a chapter title and should not be added to TOC
-  j = grep('^\\\\addcontentsline\\{toc\\}\\{(chapter|section)\\}\\{\\(PART\\)( |$)', x)
-  k = j; n = length(x)
-  for (i in seq_along(j)) {
-    # figure out how many lines \addcontentsline{toc} spans over (search until
-    # it finds an empty line)
-    l = 1
-    while (j[i] + l <= n && x[j[i] + l] != '') {
-      k = c(k, j[i] + l)
-      l = l + 1
-    }
-  }
-  if (length(k)) x = x[-k]
-  x
-}
-
 restore_appendix_latex = function(x, toc = FALSE) {
   r = '^\\\\(chapter|section)\\*\\{\\(APPENDIX\\) .*'
   i = find_appendix_line(r, x)
@@ -238,12 +293,15 @@ remove_toc_items = function(x) {
 }
 
 add_toc_bib = function(x) {
-  r = '^\\\\bibliography\\{.+\\}$'
+  r = "^\\\\bibliography\\{.+\\}$"
   i = grep(r, x)
-  if (length(i) == 0) return(x)
+  if (length(i) == 0) {
+    return(x)
+  }
+
   i = i[1]
-  level = if (length(grep('^\\\\chapter\\*?\\{', x))) 'chapter' else 'section'
-  x[i] = sprintf('%s\n\\addcontentsline{toc}{%s}{\\bibname}', x[i], level)
+  level = if (length(grep("^\\\\chapter\\*?\\{", x))) "chapter" else "section"
+  x[i] = sprintf("%s\n\\addcontentsline{toc}{%s}{\\bibname}", x[i], level)
   x
 }
 

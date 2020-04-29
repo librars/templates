@@ -12,6 +12,7 @@ The idea is to reduce the amount of syntactic constructs to memorize:
 - Headings and sections: Use the `#` token.
 - Text formatting (bold, italic): Use the `*` and `_` tokens.
 - Links, references, images: Use the `[]`, `!` and `()` tokens.
+- Anchors use `(ref:x)` tokens.
 - Code blocks: Use the backtick token.
     - Verbatim
     - Executable code
@@ -41,7 +42,7 @@ This is a code
 
 The inline version is `code inline`. To add code in R to run:
 
-```run
+```!
 ![code-1]
 # Run this r code and display the result
 5 + 4
@@ -49,12 +50,12 @@ The inline version is `code inline`. To add code in R to run:
 
 Which can be referenced as code !(code-1).
 
-```run.silent
+```! silent
 # Run this r code silently
 a <- paste("hello", "world")
 ```
 
-It is possible to run inline as well by using: `run 1+2`.
+It is possible to run inline as well by using: `! 1+2`.
 
 ## Math
 To add math, it is possible to do inline using `math \int f`. And block using:
@@ -66,36 +67,58 @@ To add math, it is possible to do inline using `math \int f`. And block using:
 And with a label:
 
 ```math
-![eq-1]
+(label: eq-1)
 \int_a^b f(x) dx
 ```
 
 To be referenced like: equation !(eq-1)
 
-## Labels
-A label can be applied to a block by using an anchor in text ![anchor-1].
+When a label is on, the block will be numbered, otherwise not. To have the equation numbered, but without bothering giving it a proper label, just use an empty label:
 
-To reference it, use !(anchor-1).
+```math
+(label:)
+\int_a^b f(x) dx
+```
 
-- Environments will automatically assign a number as counter.
-- Text anchors will use the assigned title if present.
+A math block will always be converted in Latex into an equation environment:
+
+```
+\begin{equation}
+\label{eq-1}
+\int_a^b f(x) dx
+\end{equation}
+```
+
+It is possible to control the environment created:
+
+```math cases
+\int_a^b f(x) dx
+```
+
+## Text references
+A text reference can be created with `(ref: label) Some text`.
+
+## Anchors/labels
+A label can be applied to a block by using an anchor in text: `(label: name)`. As in: (label: first-anchor).
+
+To reference it, use [text to show](label: first-achor).
 
 ## Environments
 A generic environment is declared with the `#!<env-name> <title>`:
 
 #Theorem: Helmholtz's theorem
-![theo-helm]
+(label: thm-helm)
 A _field_ is uniquely defined by its divergence and curl.
 
 #proof:
 Let `math s` be `math f : \mathbb{R} \mapsto \mathbb{R}` in set `math \Omega`.
 
 #theorem: Helmholtz's theorem II
-![theo-helm]
+(label: thm-helm-2)
 A _field_ is uniquely defined by its divergence and curl.
 
 
-The one before is theorem !(theo-helm) A triple LF indicates the end of the environment.
+The one before is theorem [](label: thm-helm) A triple LF indicates the end of the environment.
 
 #! Proposition
 A title-less proposition:

@@ -7,7 +7,8 @@
 pdf_format(toc = TRUE, number_sections = TRUE, fig_caption = TRUE,
   pandoc_args = NULL, ..., base_format = rmarkdown::pdf_document,
   toc_unnumbered = TRUE, toc_appendix = FALSE, toc_bib = FALSE,
-  quote_footer = NULL, highlight_bw = FALSE)
+  quote_footer = NULL, highlight_bw = FALSE, add_math_defs = TRUE,
+  to_pdf = TRUE)
 }
 \arguments{
 \item{toc, number_sections, fig_caption, pandoc_args}{See
